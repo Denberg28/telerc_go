@@ -1,0 +1,37 @@
+name: TeleRC Go checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: gradle/actions/setup-gradle@v4
+      - run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"'
+      - name: Shared sources and firmware host regression
+        run: |
+          python3 scripts/sync-go-core.py --check
+          python3 bridge/sync_motor_core.py --check
+          bridge/tests/run.sh
+          SANITIZE=1 bridge/tests/run.sh
+          firmware/go/tests/run.sh
+          SANITIZE=1 firmware/go/tests/run.sh
+      - name: Android regression and Go build
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleDebugAndroidTest --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TeleRC-Go-checks
+          path: |
+            go/build/outputs/apk/debug/
+            go/build/reports/
+            go/build/test-results/
+            app/build/reports/

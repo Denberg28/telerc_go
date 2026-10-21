@@ -1,0 +1,59 @@
+# TeleRC ESP32-S3 bridge firmware options
+
+For the swappable architecture, flash **TeleRCMotorController** to the fixed PWM ESP32-S3 and select one communication option:
+
+| Control link | Removable rover command board | Phone/base connection |
+| --- | --- | --- |
+| Wi-Fi | ESP32-S3 running `TeleRCWiFiGateway` | TeleRC-Rover AP / UDP 14550 |
+| LoRa | T3-S3 running `TeleRCLoRaRover` | Second T3-S3 running `TeleRCLoRaBase` via native USB OTG |
+
+Read [QUICK_START.md](QUICK_START.md) for Arduino library installation and sketch selection. The fixed motor MCU owns PWM and DIRECT/AUTOPILOT/FAILSAFE arbitration. Only one gateway may use its UART connector; swap with power removed. See [the common harness guide](SWAPPABLE_GATEWAYS.md).
+
+The following legacy firmware paths remain available:
+
+- **TeleRCBridge/** — Wi-Fi/MAVLink bridge for a SpeedyBee/Pixhawk running ArduRover.
+- **TeleRCDirectDrive/** — ESP32-S3-only basic rover controller that drives 4x BTS7960 directly from the existing Android/PC TeleRC CH1 steering / CH2 drive protocol.
+- **TeleRCHybridController/** — unified ESP32-S3 motor controller with DIRECT TeleRC control, optional F405/Pixhawk M5-M8 AUTOPILOT PWM input, bidirectional MAVLink UART routing on GPIO18/17, and priority FAILSAFE arbitration.
+
+Use Direct Drive when you only need manual Android/PC control. Use Hybrid when the same BTS7960 motor stage must accept either TeleRC or an optional F405/Pixhawk autopilot source. Use TeleRCBridge + ArduRover when the ESP32 is only a MAVLink transport bridge and ArduPilot owns the vehicle outputs.
+
+See `TeleRCDirectDrive/README.md` for the basic ESP32-only rover and `TeleRCHybridController/README.md` for hybrid wiring, source arbitration, failsafes, and the raised-wheel bench-test procedure.
+
+---
+
+# ESP32-S3 Wi-Fi MAVLink bridge for TeleRC
+
+This example is for **Arduino-ESP32** on an ESP32-S3 DevKitC-1-style board. It has not been bench-tested on your specific rover. TeleRC supplies standard ARM/DISARM commands with telemetry confirmation; the flight controller enforces its safety checks. The legacy MAVLink bridge has no app flight-mode control, MAVLink signing, or command authentication. The Flysky receiver and an independent physical stop remain essential.
+
+## Before uploading
+
+1. Open `TeleRCBridge/TeleRCBridge.ino` in Arduino IDE with Espressif's ESP32 boards package and select your **actual** ESP32-S3 board. For your own password, fill in `PERSONAL_AP_PASSWORD` near the top of your **local** copy with 12–63 characters; leave it empty to have the sketch generate a unique 16-character password on first boot. Never commit a filled-in password to GitHub. Upload, open USB Serial Monitor at **115200 baud**, and press Reset. On a native USB port, enable **Tools → USB CDC On Boot** if the monitor is blank. The sketch prints the password in the monitor on every boot. Keep it private. If the board's nonvolatile storage is erased while using the automatic password, a new one is generated; forget the old phone network and join with the new one.
+2. Verify GPIO18 and GPIO17 are available on your board. F405 V4 **T3 to ESP GPIO18 (RX)**, F405 **R3 to ESP GPIO17 (TX)**, **GND to GND**. Use the board's specified regulated 5 V input only; never put 5 V on a GPIO. Do not feed a motor supply directly into the ESP. If another device uses UART3, choose a genuinely free UART and change `SERIALx` below accordingly.
+3. In ArduRover, set `SERIAL3_PROTOCOL=2` (MAVLink2) and `SERIAL3_BAUD=115` (115200 baud), then restart the FC. Keep the Flysky receiver on its current RC input.
+4. Join the phone to `TeleRC-Rover` Wi-Fi using the password printed in the Serial Monitor. Android may report **No Internet**; choose to stay connected. In TeleRC Setup enter bridge `192.168.4.1`, UDP port `14550`; tap Connect. The app sends a receive-only discovery packet once per second; the ESP sends MAVLink telemetry directly to that phone. The discovery packet is never forwarded to the FC and cannot enable control. The ESP also broadcasts telemetry for older app builds. Both directions use UDP source/destination port `14550`.
+5. Keep wheels raised. Confirm TeleRC shows **LINK ACTIVE** before Enable; verify CH1/CH3 changes through a GCS receiver view and M5–M8 output direction/neutral without motor power first. TeleRC sends only RC overrides, not ARM or mode commands. Calibrate the receiver's reversible CH3 center at 1500 µs. Check hardware kill, Flysky neutral/failsafe, `RC_OVERRIDE_TIME`, and motor-driver behavior before powering motors.
+
+The bridge filters phone-side traffic to TeleRC's checksum-valid MAVLink 1 `RC_CHANNELS_OVERRIDE` frames and forwards whole ArduRover MAVLink frames without modifying them. The fail-safe has three layers at the bridge: a phone leaving the ESP32 access point immediately sends neutral then RC-override release; an ESP32 AP-stop event does the same before any Wi-Fi restart delay; and a 500 ms control-packet watchdog catches silent UDP/link stalls. Each automatic trip is printed in USB Serial Monitor with its reason and a cumulative `failsafe_count`. A flight-controller power/UART failure can still prevent those frames from being delivered, so ArduRover's own override timeout, receiver failsafe, and an independent motor cutoff remain required. The Wi-Fi password restricts who joins the AP but does not authenticate MAVLink or prevent a connected device from impersonating TeleRC. Do not use it as a security boundary.
+
+If Setup says **WAITING FOR HEARTBEAT**, Connect only means the phone opened a UDP socket; no FC link is confirmed. Check the ESP serial monitor for `Bridge ready at 192.168.4.1` and the three-second `FC UART bytes / frames / Wi-Fi clients / phone` counters. Zero UART bytes points toward the FC TX-to-ESP RX wiring, common ground, UART selection, power, or `SERIAL3_PROTOCOL=2` / `SERIAL3_BAUD=115` after FC reboot. Increasing bytes but zero frames points toward baud, pin selection or incomplete serial frames. Increasing frames but no link points toward phone Wi-Fi/UDP or MAVLink heartbeat validation. Counters are diagnostics, not proof of a valid heartbeat. Ensure UART3 is free. Pressing Enable while waiting shows a diagnostic but sends no motor commands. For an Arduino Nano ESP32, verify the board's physical GPIO mapping; DevKitC pin labels may differ.
+
+For TeleRC's purple measured rover track, the FC also needs a valid GPS and to emit `GLOBAL_POSITION_INT`. The phone GPS alone defines Home and the phone branch; a lost vehicle link cannot supply live rover positions.
+
+If the app says **CONTROL ON** but Mission Planner Radio Calibration does not respond to the phone, use the three-second `Commands` Serial Monitor line. Hold a stick for several seconds and compare two lines: `received=0` means the bridge sees no phone commands; rising `rejected` and its `reject=` reason identify bridge filtering; rising `accepted` and `UART_TX_bytes` with changing `CH1` or `CH2` mean valid commands were handed to ESP32 UART TX, but do not prove F405 acceptance. Then check ESP GPIO17 → F405 R3, common ground, `RC_OPTIONS` bit 1 clear, `MAV_GCS_SYSID=255` if enforced, and `RC_OVERRIDE_TIME`. Keep motor power disconnected during this test.
+
+TeleRC 0.8.8 and the matching ESP32 sketch add **Setup → Diagnose link**. Every three seconds after discovery, the bridge sends its UART byte and complete-frame counters directly to the paired phone; this report never enters the FC and cannot enable control. Tap Diagnose link at least four seconds after Connect to distinguish no bridge response, zero UART bytes, incomplete frames, and missing valid heartbeat. Older bridge firmware does not send this report and will show no bridge response even if it broadcasts MAVLink telemetry.
+
+
+## PC TeleRC compatibility
+
+The bridge accepts two RC_CHANNELS_OVERRIDE styles without changing the Android TeleRC packet format:
+
+- **Android TeleRC:** CH1-CH4 are explicit 1000-2000 us values; full release is CH1-CH4 = 0. This remains the established compatibility baseline.
+- **PC TeleRC:** commanded channels may be 1000-2000 us while unused CH1-CH4 fields are 65535 (MAVLink ignore). Per-channel 0 release is accepted.
+- **CH5-CH8:** must remain 65535 and are never accepted as remote override inputs.
+
+The bridge tracks only channels actively owned by the current sender. Its watchdog neutralizes those owned channels. If control moves from Android to PC, or PC to Android, after the pairing timeout, the previous sender's overrides are released before the new sender is accepted. This avoids stale channel ownership while preserving normal Android behavior.
+
+## Dedicated motor controller with LoRa communications
+
+The separated architecture uses one ESP32-S3 for four BTS7960 drivers and a paired LILYGO T3-S3 base/rover link. See [LoRa integration and wiring](LORA_INTEGRATION.md), [motor firmware](TeleRCMotorController), [base gateway](TeleRCLoRaBase), and [rover gateway](TeleRCLoRaRover). These new sketches need the included `libraries/TeleRCLink` Arduino library. The original standalone Wi-Fi sketches remain available.

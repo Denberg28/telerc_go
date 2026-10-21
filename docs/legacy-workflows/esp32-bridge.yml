@@ -1,0 +1,51 @@
+name: ESP32-S3 bridge compile
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bridge/**'
+      - '.github/workflows/esp32-bridge.yml'
+      - 'scripts/build-firmware.py'
+      - 'scripts/test_firmware_package.py'
+  pull_request:
+    paths:
+      - 'bridge/**'
+      - '.github/workflows/esp32-bridge.yml'
+      - 'scripts/build-firmware.py'
+      - 'scripts/test_firmware_package.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libssl-dev
+      - run: python bridge/sync_motor_core.py --check
+      - run: python -m unittest discover -s scripts -p 'test_firmware_package.py'
+      - run: bridge/tests/run.sh
+      - run: SANITIZE=1 bridge/tests/run.sh
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sketch: [TeleRCBridge, TeleRCHybridController, TeleRCMotorController, TeleRCWiFiGateway, TeleRCLoRaBase, TeleRCLoRaRover, BTS7960PWMConverter]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install pinned board and radio dependencies
+        run: |
+          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32@3.3.2 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli lib install RadioLib@7.2.1
+      - name: Compile actual ESP32-S3 target
+        run: arduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc --libraries bridge/libraries bridge/${{ matrix.sketch }}
+      - name: Compile alternate supported radio and USB-only base
+        if: matrix.sketch == 'TeleRCLoRaBase' || matrix.sketch == 'TeleRCLoRaRover'
+        run: |
+          arduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc --libraries bridge/libraries --build-property 'compiler.cpp.extra_flags=-DTELERC_RADIO_VARIANT=1276 -DTELERC_BASE_WIFI=0' bridge/${{ matrix.sketch }}
+      - name: Compile alternate four-input PWM converter
+        if: matrix.sketch == 'BTS7960PWMConverter'
+        run: arduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc --libraries bridge/libraries --build-property 'compiler.cpp.extra_flags=-DTELERC_PWM_PAIRED=0' bridge/BTS7960PWMConverter

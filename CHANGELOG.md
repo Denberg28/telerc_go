@@ -1,0 +1,580 @@
+# TeleRC Go 1.0.3
+
+- Fit settings, connection and sensitivity sheets without scroll containers;
+  consistent padding, separated footers, two-column labeled connection fields.
+- Place status and ARM/DISARM at the lower center.
+- Make upper-left TeleRC Go version text a manual Go-only stable updater;
+  opt-in download, digest/package/version/signer checks and Android installer.
+- Retain standalone Go 1.0.2 firmware, Wi-Fi/SA arbitration and full TeleRC.
+
+## Go 1.0.2
+
+- Wi-Fi-only screen with Phone connect, Settings and one ARM/DISARM toggle.
+- Remove Phone control, STOP, Use ELRS and settings footer text/profile dropdown.
+- Bound the explicit ARM transaction to ownership confirmation and sent neutral dwell; cancel it on popup, pause, loss, reboot or radio takeover.
+- Recover a busy phone UDP port using a separately bound socket; Go firmware returns telemetry to its actual source port.
+- Add receiver-side SA/CH7 authority selection and reject stale phone actuator commands after RF handover. New Go firmware is required for standalone operation.
+- Keep ArduRover over Wi-Fi through verified automatic detection and fresh CH7 telemetry; its own RC Override Enable must be configured.
+- Inset the navy power mark within the adaptive launcher icon.
+- Owner-requested stable distribution; physical phone/RF/rover measurements remain pending.
+
+## Go 1.0.1
+
+- Launch directly into one landscape control screen; remove Setup and Test tabs.
+- Add supplied ship background behind transparent joystick panels and navy power icon.
+- Add Phone connect, explicit Phone control/ARM, STOP and ELRS release.
+- Keep link details and separate steering/drive sensitivity in compact stopped popups.
+- Preserve Go 1.0.0 protocol, firmware, signer and no-auto-rearm behavior.
+- Signed candidate; installed hardware and field checks pending.
+
+## 0.8.89 — Balance popup only
+
+- Replace the full-page Balance form with a centered content-measured popup.
+- Equal padding, section/text spacing, scrolling body and fixed footer actions.
+- Close/Back returns to Setup; navigation/background clears the old popup.
+- App-only; retain balancer0.3.0. See docs/BALANCE_POPUP_089.md for checks and limits.
+
+## 0.8.88 / code106
+
+- Remove duplicate Balance header button; retain dropdown navigation.
+- Standardize shared action appearance and compact bounded popup frames.
+- Bind Balance consent to session/boot; tighten compatible manual MAVLink validation.
+- Serialize and validate DownloadManager completion verification.
+- Full application review and remaining limits: docs/UI_SAFETY_REVIEW_088.md.
+
+## 0.8.87
+
+- Add the upper-right Balance pre-test tab immediately before Guide, plus a tab-menu entry.
+- Show live calibration persistence, angle/rate and exact readiness blocker; calibrate/save, test left/right/both, confirm directions and stop from TeleRC.
+- Add paired standalone balancer0.3.0 Wi-Fi admin support with current-peer restriction, boot/status ordering, expiring single-use challenge, bounded request mailbox, no action retries and robot-side state/stop checks.
+- Keep motor tests at55/255 for150ms and require a completed both-wheel test plus explicit physical confirmation before arming. Setup never arms or enables control.
+- Preserve ordinary rover, mission, FPV and wallet behavior; retain saved gyro storage compatibility. Software/physical qualification remains pending as recorded in docs/BALANCE_PRETEST_087.md.
+
+# 0.8.86 / code104
+
+- Add map-based F1/F2/F3 ON/OFF events interleaved with waypoints, editable ordered rows, coordinate-bound saved actions and configurable dedicated output PWM values.
+- Recheck each start and confirm exact coordinates/actions/output mapping. Verify stationary HOLD, initialize OFF, serialize absolute servo commands and require accepted ACK plus fresh reported PWM.
+- Cancel expired/session-old writes; request bounded all-function OFF on completion/STOP/failure, retain unconfirmed OFF across reconnect and guard phone-enable/arming handover.
+- Reformat the compact status/help pane and retain shared popup sizing/transitions. [Scope, tests, compatibility and HIL](docs/MISSION_FUNCTIONS_086.md).
+
+# 0.8.85 / code103
+
+- Add one possible replay bonus coin on completed levels: 25% saved chance, clear-only payout, bounded v3 earnings retaining v1/v2 wallet data.
+- Start practice immediately after either Restart level action, with neutral sticks/reset state.
+- Clarify Waypoint Single/Multiple points, ordered-route confirmation and planning-only connection guidance. [Checks and migration/rollback](docs/REPLAY_COINS_085.md).
+
+# 0.8.84 / code102
+
+- Measure actual popup content before opening; compact short forms/lists/notices and scroll long guides/lists within screen bounds.
+- Share sizing, large-text action heights, centering, transitions and lifecycle cleanup with Test sheets; keep Market size stable during category changes.
+- Preserve navigation, connection, authority, updater and firmware behavior. Extend native layout regressions. [Release checks and acceptance](docs/POPUP_LAYOUT_084.md).
+
+# 0.8.83
+
+- Standardize app popups with flat themed sheets, visible fixed actions, centered bounds and lifecycle cleanup.
+- Remove redundant unknown arm/mode text from Waypoint; shorten steps/help and expose full check details on tap.
+- Revoke manual phone control or request Guided HOLD before a modal; never resume on close.
+- Recover ordinary Wi-Fi after Android Network replacement without restoring authority. Bound updater metadata and duplicate checks.
+
+# 0.8.82
+
+- Move connection guide before Setup minimize; use a compact fixed pane with combined connection/status and ports.
+- Rename Controls actions to Use transmitter / Phone control; native Backpack offers a deliberate disconnected FC Wi-Fi setup switch.
+- Combine Waypoint readiness and confirmation under Mission start, retain all navigation gates, share F1–F3 servo assignments, and shorten Help & safety.
+
+## 0.8.81 — ELRS recovery
+- Continue bounded Backpack registration after F405 telemetry becomes stale.
+- Rebind a removed Android Wi-Fi Network through the existing safe reconnect path.
+- Distinguish UDP-open/live/stale telemetry and retain native handset-only command guard.
+- Add outage/network-removal/background/command-guard JVM regressions and native status checks.
+- App-only/code99; hardware/RF stopping and phone installation remain pending.
+
+# F405 ELRS and clear Waypoint flow — 0.8.80 development
+
+Setup distinguishes Mini Wi-Fi from ArduRover Wi-Fi, LoRa and ELRS TX Backpack. FC ELRS guides cover receiver/transmitter wiring and CRSF phone/handset handover. Native Backpack supports telemetry with separate send/listen ports and handset authority; phone commands are locked to avoid competing RC overrides. Waypoint uses Select → Check rover → Review & confirm, visible Undo/Clear and a fixed STOP. [Compatibility, gates and hardware checks](docs/ELRS_WAYPOINT_080.md). Development source; hardware validation remains blocked.
+
+## 0.8.79
+
+Add isolated Waypoint map/tab, single or multi waypoint saved drafts, confirmed ArduRover DO_REPOSITION sequencing, verified HOLD/readiness/failsafe parameters and cancellation on stale telemetry/lifecycle/timeout. Existing gateway sketches remain unchanged and planning-only; compatible navigation link and physical/SITL validation pending. Preserve existing tab bodies, FPV, wallet and manual protocol.
+
+# 0.8.78 — practice worlds and accessories
+
+- Setup version is centered in its bottom footer in expanded/minimized modes; narrow layouts place it below corner actions.
+- City (1–5), Forest (6–10), Desert (11–15), Space (16–20) have deterministic vector scenery, matching floor/wall palettes and environment labels. Course version/physics/times remain unchanged.
+- Market groups seven distinct silhouettes into Land/Sea/Air/Space. Adds Skiff, Skywing and Starship.
+- Accessories replaces Colors: stack/remove Hood, Armament, Wheels, Exhaust and Spoiler. Cosmetics only. Existing color purchases refund through v1-to-v2 wallet migration; vehicles, claimed coins and progress remain. Complete catalog costs the existing 220-coin supply.
+- App-only signed test candidate; no firmware reflash. Phone/rover acceptance remains pending; see docs/PRACTICE_WORLDS_078.md.
+
+## 0.8.77
+
+- Persist desired FPV receiver and camera/map choice; reconnect granted receivers after USB re-enumeration and foreground resume.
+- Separate and deduplicate explicit USB permission transactions; automatic recovery waits for missing access instead of prompting repeatedly. Android owns the Always/default chooser.
+- Keep existing sessions on repeated Connect, reject stale session/grant callbacks, restart replaced textures and reset recovery after sustained fresh frames. Retries slow to 30 seconds after three fast attempts.
+- Add Auto reconnect and USB default help to video options, production reconnect-policy regression tests and native no-device lifecycle checks. Physical UVC/phone validation remains pending.
+
+## 0.8.76
+
+- Extend Controls and Test center panes through the former footer by placing bottom actions in their joystick columns.
+- Remove the Test version and Controls connection-status footer; retain Setup diagnostics and all control gating.
+- Size Enable/Stop and Clear times to their side columns; share F1–F3 width without fixed-width overflow.
+- Add native full-height, no-overlap and visible-action checks across themes/font sizes. Signed test release; phone/HIL pending.
+
+## 0.8.75
+
+- Fix theme-switch flashes by updating Light/Sepia/Dark without recreating the Activity or reloading its wallpaper; retain endpoint drafts, native dialog palettes and link session ownership.
+- Ignore repeated current theme/accent selections; remove background-selector window animation and use the active theme for the window fallback.
+- Compact the shared anchored tab dropdown from 48 to 40 dp rows, scaling for larger text.
+- Add repeated native theme/accent transition and draw-frame regressions, retain full UI/control sanitizer qualification, and publish the owner-authorized stable channel with verified signing/source/checksums. Physical phone/receiver/HIL remains untested.
+
+## 0.8.67 — FPV recovery and photo theme
+
+- Select advertised video profiles with Auto/MJPEG/YUYV choices; expose format and error diagnostics.
+- Bound stalled/open-error recovery; guard stale callbacks, duplicate preview/surfaces and background resume. Recovery disables live authority.
+- Import, persist and remove an offline photo background using the system document picker, bounded off-UI decoding and atomic save. Keep theme-colored scrim and readable panels.
+- Add profile/image policy regressions and native Android image storage/render/options checks. Hardware/video quality remains unverified.
+
+## 0.8.66 — USB FPV default handler and diagnostics
+
+- Register USB video-class attachment handling, including composite UVC devices.
+- Reuse the running Activity and open FPV after validating the device against the USB bus; neutralize control before permission prompts.
+- Distinguish no USB enumeration from non-UVC devices. Hold Connect FPV for VID/PID/interface/permission diagnostics.
+- Keep camera dependency, Wi-Fi/LoRa control and firmware unchanged. Actual Skydroid/phone verification pending.
+
+## 0.8.62
+
+- Restore the pre-compact palette with slightly deeper surfaces/action fills, white action labels and original joystick colors.
+- Keep the current compact layout, dimensions and controls; remove Pastel and migrate that setting to Light. Preserve explicit Light/Sepia/Dark selections.
+- Retain all rover, map/FPV, connection and sensitivity/expo behavior; no firmware change.
+
+## 0.8.61
+
+- Add Pastel as the default background with powder-blue, mint, lavender and slate tonal fills; brighten Light and warm Sepia panels.
+- Migrate the existing Dark setting to Pastel once while preserving later explicit theme choices and all control/connection preferences.
+- Lighten the launch background and idle joystick knobs; retain readable slate text and stronger enabled knobs.
+- Verify theme migration/persistence and attempt native Setup/Controls captures for all 16 background/accent combinations. No firmware or control-protocol changes.
+
+## 0.8.60 — muted themes and balanced Setup
+
+- Add desaturated accents and tonal buttons across Light/Sepia/Dark with readable foregrounds.
+- Replace stretched Setup quadrants with centered, equal columns and matching content rows; remove shadows and reduce rounding.
+- Preserve connection, response, updates, diagnostics and all rover control/firmware behavior.
+- Verify native Setup variants in an API 35 emulator. Keep physical phone/rover acceptance pending.
+- Retain signer and increase versionCode to 78. Use release assets without the redundant quota-limited Actions copy.
+
+## 0.8.59 — compact UI and Sepia background
+
+- Keep Setup and Controls; remove Test drive/game and LoRa provisioning pages.
+- Add persistent Light/Sepia/Dark backgrounds with legacy preference migration.
+- Reduce shell padding, widen both joystick panels and retain central USB FPV/map swapping.
+- Preserve response settings, Wi-Fi/USB LoRa control, arming, failsafes and stored routes; move CSV export into diagnostics.
+- Package with retained signing identity and increasing versionCode 77; hardware/phone QA pending.
+
+## 0.8.58 — larger controls and USB FPV (development)
+
+- Base this update on the released 0.8.57/code75 source, retaining independent steering/drive sensitivity, expo and all Mini rover/Wi-Fi/LoRa behavior.
+- Enlarge joystick panels, circles and knobs; retain the response curve, endpoints and spring return.
+- Add USB UVC FPV preview, permission/error/disconnect states, aspect-fit rendering and stale-frame masking.
+- Add Show camera / Show map and Connect FPV below the center view; preserve route activity during view swaps.
+- Neutralize before camera/USB permission prompts; release video resources on lifecycle loss. Firmware unchanged.
+
+# Changelog
+
+## 0.8.56
+
+- Restore the full previous TeleRC layout and features after the Wi-Fi-only simplification.
+- Preserve Wi-Fi bridge and USB LoRa choices, map/test/game, themes and diagnostics.
+- Add Mini rover Wi-Fi setup and require a fresh centered command dwell before ARM; wait for heartbeat-confirmed arm/disarm.
+- Correct standalone Wi-Fi instructions for existing sketch 1.2.0: no receiver or flight controller required. Firmware is unchanged.
+- Retain signing identity and increase versionCode to 74 so this restoration installs over 0.8.55.
+
+## 0.8.54
+
+- Add an explicit Mini rover Wi-Fi preset with fixed target/source UDP 14550 and direct ESP32 receiver setup instructions.
+- Require successfully streamed centered controls before mini ARM; preserve explicit Enable/ARM, source permission and failsafe recovery.
+- Explain missing receiver permission and single-client Wi-Fi without flight-controller UART diagnostics.
+- Add neutral arming regressions and Android-to-mini parser compatibility tests. Firmware unchanged; physical installation/Wi-Fi/motor HIL pending.
+
+## 0.8.53
+
+- Signed test candidate, versionCode 71, with matching compiled ESP32-S3 and LILYGO T3-S3 binaries, source sketches, flash instructions, build evidence and checksums.
+
+- Center the LoRa setup in compact responsive cards with consistent padding and paired action rows.
+- Add pairing-key Show/Hide, hide on pause/navigation/disconnect, and confirm draft-key replacement.
+- Automatically read a newly connected local USB board and distinguish BASE/ROVER, radio activation and rover heartbeat.
+- Require inactive-board read before Save; retain phone pairing values only after successful board ACK. Serialize admin requests and require reconnect after a missing reply.
+- Add strict board-reply parsing and regression coverage for failed saves, stale ACKs, session changes, restart requirements and key fingerprints.
+- Accept inactive blank-board INFO replies with unset frequency, while continuing to reject active boards with unset frequency.
+- Preserve CH1 steering/CH2 drive and the existing direct LoRa wire format/profile; describe supported differences from Meshtastic.
+- Coalesce sparse radio commands per axis with independent expiry; preserve both RC release and DISARM and discard queued motion before stopping.
+- Sanitize the PWM-only converter: atomic validated capture, immediate signal-loss stop, 300 ms neutral startup/recovery, checked LEDC attachment, bounded diagnostics and Arduino folder entrypoint.
+- Establish dedicated/hybrid motor output-low GPIOs before startup delays. Count UART short writes and inhibit a failed radio receive restart.
+- Add four-driver protocol-to-motor integration and paired/four-input PWM regressions; compile all seven primary ESP32-S3 sketches and three alternate builds before future release packaging.
+
+# Bridge compatibility maintenance — 2026-10-02
+- ESP32 bridge now accepts standard sparse PC TeleRC RC_CHANNELS_OVERRIDE packets using 65535 for ignored CH1-CH4 fields.
+- Android TeleRC MAVLink generation is unchanged.
+- CH5-CH8 remain protected and must be 65535.
+- Added active-channel ownership tracking so sparse watchdog neutralization affects only controlled channels.
+- Added deterministic stale-sender release before Android/PC handover.
+
+## 0.8.52
+
+- Rebuild the reviewed 0.8.51 baseline as a new signed test candidate with Android versionCode 70 and matching bridge sketches.
+- Preserve joystick mapping, heartbeat recovery, ARM cancellation, transport protocols, pins, pairing settings and motor watchdogs unchanged.
+- Rerun Android tests/lint/build, host regressions with full sanitizers, eight actual ESP32 builds and signing-continuity verification before publication. Include commit-bound build information and SHA-256 checksums.
+- Hardware-in-the-loop, installed-device upgrade and PC interoperability remain pending; install manually and validate on restrained wheels before stable promotion.
+
+## 0.8.51
+
+- Signed test candidate with matching dedicated sketches. Required Android unit/lint/build, host sanitizer, actual-board compile and signing-continuity gates run before publication; installed-device and hardware tests remain pending.
+- Revoke Android live-control authority after heartbeat expiry; retain transport and require explicit Enable Control after telemetry recovery. Add control-gate regressions.
+- Cancel expired/invalidated queued ARM requests; recheck between retries. Capture each session's endpoint port for handover/disconnect packets and synchronize stop state against control transmission.
+- Use the API 26+ receiver registration overload with explicit flags for system update and package-scoped USB permission broadcasts; register the updater receiver before enqueueing its download.
+- Adopt QA/compatibility/HIL documentation, lint gates, host sanitizer checks, and prerelease-only automated publication pending measured hardware evidence.
+- Give the LoRa radio module static lifetime, removing an unowned boot-time allocation identified by the new leak-sanitizer gate while retaining its pins/profile.
+
+## 0.8.50
+
+- Sanitize release validation: run controller synchronization and host safety regressions before signing; compile the dedicated motor controller, Wi-Fi gateway and both LoRa roles, including both supported radio variants.
+- Pin the release ESP32 core and RadioLib versions to the bridge CI versions to prevent release-only dependency drift.
+- Include matching dedicated sketches, shared libraries, wiring and setup guides in a bridge ZIP with APK/ZIP SHA-256 checksums.
+- Preserve existing control mapping, authority, watchdog and USB provisioning behavior. Physical link and stop timing remain bench-unverified.
+
+## 0.8.49
+
+- Add a dedicated LoRa setup tab for native USB board information, frequency/power validation, masked shared pairing keys and blank-board NVS provisioning. Settings activate after restart; active radios reject configuration changes.
+- Add a dedicated ESP32-S3 Wi-Fi gateway sharing the rover T3-S3's framed UART interface to the fixed PWM controller. Keep existing motor failsafes and Wi-Fi controls; fresh app installations default to Wi-Fi.
+- Document the common keyed connector, power-off module swap, and T3-S3 adapter requirement for the pictured 44-pin ESP32-S3 carrier. LoRa remains a direct authenticated motor-control link, with no mesh routing or queued joystick history.
+- Add provisioning, restart, controller-lease and validation regression checks. Hardware USB, range, brownout and stopping tests remain required.
+
+## 0.8.48
+- Add native ESP32-S3 USB CDC OTG transport for Android joystick commands, ARM/DISARM and telemetry through the paired LoRa base/rover gateways.
+- Default the LoRa base to USB input with Wi-Fi disabled; retain legacy Android UDP as an explicit Setup option.
+- Separate rover T3-S3 communications from dedicated ESP32-S3 four-BTS7960 motor PWM, preserving independent motor watchdogs and neutral-only transfer/arming.
+- Add authenticated short-lived LoRa challenge responses, bounded latest-command mailboxes, UART CRC framing, PC USB relay, wiring/provisioning guide and expanded firmware checks.
+- Hardware OTG, radio range and motor timing require bench validation; no field reliability claim.
+
+## 0.8.47
+- Rebuild the latest sanitized TeleRC control and ESP32-S3 bridge baseline after the final documentation correction.
+- Preserve v0.8.46 joystick, ARM/DISARM, heartbeat-pause, CH1 steering / CH2 drive, MAVLink validation, neutral-hold failsafe, and persistent TeleRC-Rover SoftAP behavior unchanged.
+- Release from the current main branch so the signed APK matches the latest reviewed repository state.
+
+## 0.8.46
+- Final control-path and release sanitization after field testing.
+- Fix live joystick authority being silently disabled by ARM/DISARM; ARM/DISARM now neutralizes commanded axes while preserving the enabled control session.
+- Improve ARM/DISARM feedback: distinguish COMMAND_ACK acceptance from final ARMED/DISARMED state confirmed by autopilot HEARTBEAT.
+- Keep joystick Views interactive during transient heartbeat gaps; transmission is paused and axes are neutralized until a fresh verified heartbeat returns.
+- Accept the compact four-field bridge status format while retaining compatibility with the established three- and seven-field diagnostic formats.
+- Preserve Rover mapping CH1 steering / CH2 bidirectional throttle and the 1100–1900 calibrated joystick range.
+- Restore the field-proven ESP32-S3 SoftAP startup path: persistent WIFI_AP mode with no WIFI_OFF cycling, AP recreation loop, or control-state-driven Wi-Fi restart.
+- Retain the independent bridge safety layers: 500 ms live-control watchdog, 10 Hz neutral hold, explicit Disconnect receiver handover, strict MAVLink CRC/source filtering, and standard non-forced ARM/DISARM.
+- Update documentation to reflect heartbeat-gap behavior: controls pause safely without destroying joystick touch authority.
+
+## 0.8.45
+- Correct launcher-icon placement observed on the installed Android app by reducing the adaptive foreground artwork to 78% around its existing center.
+- Preserve the approved monochrome controller design and dark background while adding more visual breathing room across OEM launcher masks.
+- No rover control, MAVLink, UI, updater, diagnostics, or fail-safe behavior changes.
+
+## 0.8.44
+- Update the TeleRC launcher icon to the uploaded friendlier monochrome controller logo.
+- Preserve the two-color dark/white identity while using the softer lower smile-like curve from the approved artwork.
+- Keep the full controller mark inside the Android adaptive-icon safe area to avoid launcher-mask cropping.
+- Preserve v0.8.43 rover control, MAVLink, ARM/DISARM, diagnostics, updater, and fail-safe behavior unchanged.
+
+## 0.8.43
+- Replace the TeleRC launcher icon with the approved monochrome RC transmitter mark.
+- Use only the dark transmitter color and white; remove Wi-Fi artwork, center antenna, lower horizontal bars, and the center joystick-connecting line.
+- Keep the inverted white bottom-center panel from the approved logo.
+- Fit the complete controller artwork inside the Android adaptive-icon safe area so launcher masks do not crop the logo.
+- Preserve v0.8.42 rover control, MAVLink, ARM/DISARM, diagnostics, update, and fail-safe behavior unchanged.
+
+## 0.8.42
+- Replace the TeleRC launcher branding with the new text-free Wi-Fi signal + RC transmitter controller logo.
+- Place the Wi-Fi arcs behind the transmitter for a clean wireless-control identity.
+- Preserve v0.8.41 connection, control, MAVLink, ARM/DISARM, UI, and fail-safe behavior unchanged.
+
+## 0.8.41
+- Refine Setup Theme & Control Feel spacing.
+- Move the sensitivity value below the adjustment slider while preserving the symmetric 2x2 Setup card layout.
+- Preserve v0.8.40 connection, control, MAVLink, ARM/DISARM, and fail-safe behavior unchanged.
+
+## 0.8.40
+- Refine Setup into a vertically symmetric 2x2 layout.
+- Match Theme & Control Feel height to Connection and App Update height to Link Status.
+- Reorder App Update content so Check for updates aligns with Diagnose Link.
+- Preserve v0.8.39 control, MAVLink, ARM/DISARM, connection, and fail-safe behavior unchanged.
+
+## 0.8.39
+- Refine Setup layout only: keep the compact light/dark toggle in the upper-right header.
+- Move Theme & Control Feel above App Update in the right Setup column.
+- Preserve the v0.8.38 reliability, MAVLink, ARM/DISARM, connection, and fail-safe behavior unchanged.
+
+## 0.8.38
+- Full reliability and sanitization review of Android control lifecycle, MAVLink handling, ESP32-S3 bridge, ARM/DISARM, diagnostics, updater, map/test isolation, and release workflow.
+- Simplify bridge control authority into live override, neutral hold, and receiver released states.
+- Keep tab changes, app backgrounding, heartbeat loss, and control timeout fail-safe in neutral hold; the bridge refreshes neutral at 10 Hz after a 500 ms live-control timeout.
+- Make explicit Disconnect a single-owner handover: Android neutralizes first, then TELERC_DISCONNECT_V1 tells the bridge to release RC override and clear phone pairing. If that message is lost, the safer fallback remains neutral hold.
+- Remove duplicate Android/bridge receiver-release sequencing, stale legacy diagnostic parsing, unused navigation code, and obsolete heartbeat/AP diagnostic state.
+- Require the correct MAVLink RC_CHANNELS_OVERRIDE CRC extra (124); remove compatibility with the obsolete incorrect CRC 50 format.
+- Retain strict endpoint/source filtering, checksum-valid autopilot heartbeat gating, standard non-forced ARM/DISARM, heartbeat-authoritative ARM button state, CH1 steering / CH2 drive, F1-F3 external-servo assignment isolation, and persistent AP/UDP transport.
+- Bridge diagnostics now report UART RX frames, accepted/rejected phone commands, UART command bytes, and ARM/DISARM forwards using one compact current status format.
+
+## 0.8.37
+- Rearrange Setup into two compact columns: Connection above Link Status on the left; App Update above Theme & Control Feel on the right.
+- Move light/dark mode into the Theme card while retaining accent selection and joystick sensitivity.
+- Harden ARM/DISARM delivery by sending the normal MAV_CMD_COMPONENT_ARM_DISARM three times with unique MAVLink sequence numbers after neutralizing TeleRC control.
+- Keep normal ArduRover pre-arm checks active; no force-arm bypass is used. COMMAND_ACK remains the authoritative result shown by TeleRC.
+
+## 0.8.36
+- Keep ARM/DISARM on the existing MAVLink link instead of performing receiver handover first.
+- Neutralize TeleRC joystick output before ARM/DISARM while preserving the active transport session.
+- Add transport-drop diagnostics for discovery send, UDP receive, and control send failures.
+- Includes the v0.8.35 background command-transmission fix.
+
+## 0.8.35
+- Android networking reliability update for command transmission.
+- Includes the validated post-0.8.34 sender-thread fix.
+- Compatible with the current ESP32-S3 bridge sketch.
+
+## 0.8.34
+- Fix MAVLink ARM/DISARM flow: arm/disarm now neutralizes and releases RC override first, then sends one standard MAV_CMD_COMPONENT_ARM_DISARM COMMAND_LONG with confirmation=0.
+- Parse MAVLink COMMAND_ACK for command 400 and show ACCEPTED / TEMPORARILY REJECTED / DENIED / UNSUPPORTED / FAILED in TeleRC instead of silently waiting for heartbeat state.
+- Set ARMING_OPTIONS=0 in the checked-in Rover profile so pre-arm messages are no longer suppressed. Normal ArduRover arming checks remain enabled; no force-arm bypass is used.
+- Final Android checks pass with the corrected arming flow; ESP32 bridge compilation remains green from the matching handover/safety bridge state.
+
+- Make deliberate STOP CONTROL and explicit Disconnect hand control back to the physical RC receiver: TeleRC sends neutral first, then MAVLink RC override release. Tab changes, app backgrounding, heartbeat loss and unexpected link loss still use neutral-hold.
+- Align TeleRC joystick output with the calibrated RC1/RC2 range (1100-1900 us instead of 1000-2000 us) to avoid early saturation and abrupt steering/throttle response.
+- Soften the checked-in Rover profile for bench driving with MOT_SLEWRATE=40 and MANUAL_STR_EXPO=0.3. RC_OVERRIDE_TIME remains 3 s as a fallback if MAVLink overrides disappear without an explicit release.
+
+## 0.8.33
+- Stop the LINK ACTIVE / HEARTBEAT DELAYED visual oscillation by removing the intermediate delayed banner; LINK ACTIVE remains until the verified heartbeat is genuinely lost.
+- Increase verified-heartbeat control freshness tolerance from 2.5 s to 4.0 s and lost-heartbeat UI grace from 6 s to 8 s, while retaining the independent 500 ms ESP32 control-packet watchdog and 10 Hz neutral-hold.
+- Measure FC-side autopilot HEARTBEAT cadence in the ESP32 bridge and expose heartbeat count, latest gap and maximum gap through Diagnose Link and USB diagnostics.
+- Signed release workflow re-runs Android verification before publishing.
+
+## 0.8.32
+- Simplify the ESP32-S3 bridge transport to the early stable model: start SoftAP and UDP once and do not restart/rebind them for normal phone association events.
+- Keep control safety independent from transport: tab changes and app backgrounding send neutral, and the bridge keeps the existing 500 ms watchdog plus 10 Hz neutral-hold.
+- Add an explicit TELERC_DISCONNECT_V1 routing message. Pressing Disconnect sends neutral, clears the bridge phone pairing immediately, closes the Android UDP socket, and disables auto-reconnect.
+- Keep passive telemetry recovery: if the paired phone is absent for five seconds, FC MAVLink returns to broadcast without restarting Wi-Fi.
+- Preserve CH1 steering, CH2 drive, ARM/DISARM, external servo assignments, MAVLink validation, and bridge diagnostics.
+- Android checks and ESP32-S3 bridge compilation pass for this simplified transport release.
+
+## 0.8.31
+- Keep the TeleRC UDP session persistent when Android backgrounds or temporarily suspends the Activity while another app is in use.
+- Remove the 8-second packet-silence transport teardown; heartbeat loss still disables rover control, but no longer resets the socket or target system by elapsed time alone.
+- Reconnect remains reserved for actual UDP/socket failure or an explicit operator Disconnect.
+- Correct link diagnostics to reference CH1 steering and CH2 drive/throttle.
+- The signed release workflow re-runs Android tests/build verification before publishing.
+
+## 0.8.30
+- Change the TeleRC rover drive/throttle command from RC CH3 to RC CH2 end-to-end.
+- Update live-control UI labels, sent-command logging, dead-reckoning input, ESP32 bridge diagnostics, diagnostic sketch, and the checked-in ArduRover profile to use CH2.
+- Steering remains on CH1; CH3 and CH4 are neutral in TeleRC live control.
+- Android checks and the matching ESP32-S3 bridge compile pass for the final CH2 mapping.
+
+## 0.8.29
+- Stabilize the Android rover link by no longer tearing down UDP when Android temporarily changes the captured Wi-Fi Network capability state.
+- Separate transport health from MAVLink heartbeat health: heartbeat loss still disables live control, but does not by itself churn the UDP connection.
+- Treat sustained total bridge silence as the transport failure condition; reconnect only after roughly 8 seconds without any ESP32 packet or on a real socket failure.
+- Keep automatic reconnect at 2 seconds after a genuine transport failure, while preserving the faster 500 ms ESP32 control watchdog and 2.5-second heartbeat control cutoff.
+- Extend Diagnose Link with ESP32 access-point restart count and phone station-disconnect event count so AP resets, phone Wi-Fi drops, and FC/UART heartbeat loss can be distinguished.
+- Retain v0.8.28 dedicated ARM / DISARM, F1/F2/F3 external-servo assignments, and neutral-hold failsafe behavior.
+- Android checks and the matching ESP32-S3 bridge compile pass for this release.
+
+## 0.8.28
+- Make the large former Servo button a dedicated rover ARM / DISARM control on Controls and Test Drive; its label follows the real armed state reported by MAVLink HEARTBEAT.
+- Send normal MAV_CMD_COMPONENT_ARM_DISARM commands through a narrowly whitelisted ESP32-S3 bridge path; ArduRover arming checks remain active and no force-arm bypass is used.
+- Keep F1, F2 and F3 exclusively for external servo output assignments; automatically clear the temporary ARM/DISARM assignment if it was previously stored on an F-button.
+- Harden Stop, tab changes, app pause, Disconnect and heartbeat loss: TeleRC sends repeated neutral commands and the bridge holds 1500 neutral at 10 Hz instead of releasing RC override back to a possibly non-neutral receiver.
+- Keep the bridge-side 500 ms control watchdog and Wi-Fi station/AP-loss failsafes; recovery restores telemetry only and never resumes joystick authority automatically.
+- Include passing Android unit/build checks and matching ESP32-S3 bridge compilation for this release.
+
+## 0.8.27
+- Rebuild the latest TeleRC code after the v0.8.26 landscape spacing and footer-overlap fixes.
+- Retain the layered Wi-Fi/control fail-safe introduced in v0.8.25.
+- No control mapping or protocol behavior changes from v0.8.26.
+
+## 0.8.26
+- Fix Test Drive footer overlap where CSV could intrude into the centered DISCONNECTED/link-status area.
+- Use equal left/right footer zones with a fixed centered link status on Controls and Test Drive.
+- Tighten button dimensions and horizontal spacing for Game/SIM/GPS/Reset/CSV/F1/F2/F3 while preserving touch targets.
+- Normalize landscape shell, panel, top-control, center-pane and footer spacing for a cleaner balanced layout.
+
+## 0.8.25
+- Harden the ESP32-S3 bridge fail-safe: Wi-Fi station disconnect and AP-stop events now neutralize steering/throttle and release RC override immediately.
+- Keep the existing 500 ms control-packet watchdog as a second bridge-side stop path for silent UDP/link stalls.
+- Record automatic fail-safe reason/count in ESP32 USB diagnostics and count the neutral/release bytes sent to the flight controller.
+- Keep TeleRC control non-latching: reconnection restores telemetry only; the operator must explicitly enable control again.
+
+## 0.8.24
+- Make Reset restart the offline Test simulator, alongside the Game return and servo assignment updates in 0.8.23.
+
+## 0.8.23
+- Replace the hidden Game/Test switch with an explicit Test / Game return button.
+- Center text messages across the application.
+- Add persistent Servo/F1/F2/F3 output assignments, prevent duplicates and reserve rover motor outputs M5–M8.
+- Keep assignment separate from operation: current bridge only supports RC overrides.
+
+## 0.8.22
+- Add saved joystick sensitivity from 25 to 100 percent; retain neutral release and assigned axes.
+- Compact Setup with saved accent choices and a fixed non-scrolling layout.
+- Reacquire phone GPS after Test Reset, including stationary fixes.
+- Retain requested GPS recentering until the map style is ready; reject stale and invalid fixes.
+
+## 0.8.21
+- Add a saved light/dark theme switch in Setup and blue application accents.
+- Make Setup landscape with dropdown navigation and a compact two-column layout.
+- Separate navigation and Servo buttons from joystick cards with a clear gap on Controls and Test drive.
+- Apply theme colors to cards, inputs, overlays, joysticks and system bars.
+
+## 0.8.20
+- Extend the center pane to the top on Controls and Test drive, beside compact navigation and Servo buttons.
+- Move link status to the lower center and remove the bottom explanatory text.
+- Use matching narrow joystick panels and F1/F2/F3 placeholders on both screens.
+- Keep navigation in the dropdown only; remove Show tabs.
+
+## 0.8.19
+- Add compact navigation above steering with expandable and collapsible tabs.
+- Add a Servo placeholder above Drive and F1/F2/F3 placeholders at bottom right.
+- Expand the center map and move Enable/Stop into the bottom toolbar.
+- New auxiliary buttons display not-configured feedback and send no commands.
+
+## 0.8.18
+- Use compact equal-width steering and drive panels around a larger center map pane.
+- Move Enable/Stop above the map and reduce Controls card padding and headings.
+- UI layout update only; rover commands and bridge firmware are unchanged.
+
+## 0.8.17
+- Accept the bridge's valid zero-valued RC release report after Stop, preserving CH3 history in Link diagnostics. Display released channels as neutral 1500.
+- Report neutral CH1/CH3 from the bridge after a release while retaining the non-neutral drive range.
+
+## 0.8.16
+- Retain the lowest and highest non-neutral CH3 values received by the ESP32 and count changed drive commands. Diagnose link now shows this history after leaving Controls, when the stop command has reset the live CH3 value to 1500.
+- Keep compatibility with earlier bridge diagnostic formats. Motor response still requires bench verification.
+
+## 0.8.15
+- Report ESP32 accepted/rejected control frames, UART transmit bytes, last CH1/CH3 values, and heartbeat age in Link diagnostics.
+- Refresh bridge diagnostics once per second. This release adds observability; motor motion and intermittent heartbeat loss still require a bench diagnosis.
+
+## 0.8.14
+- Test and Live crosshairs request a current precise phone GPS fix and center the map once a valid fix arrives.
+- Let the crosshair retry location permission and open device location settings when services are off, without interrupting active rover control.
+
+## 0.8.13
+- Distinguish a delayed heartbeat from a lost link in Setup while preserving the 2.5-second control cutoff.
+- Limit queued link status UI refreshes to four per second, avoiding redundant main-thread work during telemetry bursts.
+- Add a test proving display grace never extends control authority.
+
+## 0.8.12
+- Keep telemetry connected when switching pages or briefly leaving the app; stop and release joystick control immediately when the app loses focus.
+- Remember a requested connection and retry every two seconds on return or after Wi-Fi socket failure. Never resume control automatically.
+
+## 0.8.11
+- Allow 2.5 seconds between verified rover heartbeats before marking the link stale, accommodating a missed 1 Hz packet while retaining neutral and release on loss.
+- Recheck heartbeat freshness when a queued UI update runs, avoiding a false control stop after a newer heartbeat arrives.
+
+## 0.8.10
+- Correct RC_CHANNELS_OVERRIDE CRC extra to 124; prior Android and ESP32 bridge used heartbeat CRC 50, so the FC discarded joystick frames.
+- The updated bridge accepts legacy app packets and rewrites their checksum before UART. Flash it before installing the updated APK.
+
+## 0.8.9
+- Bind the rover UDP socket explicitly to Wi-Fi so a phone using mobile data alongside an offline ESP32 access point cannot route TeleRC discovery or control traffic over cellular.
+- Explain that a missing bridge diagnostic reply may mean an older ESP32 sketch is installed; keep live control blocked without a valid heartbeat.
+
+## 0.8.8
+- Add a Diagnose link action in Setup that explains whether the ESP32 bridge is reachable, whether it sees FC UART bytes and complete frames, and whether TeleRC receives a valid rover heartbeat.
+- Send receive-only bridge diagnostics to the paired phone every three seconds; diagnostics cannot enable control or issue rover commands.
+- Continue to block control until a valid autopilot heartbeat is received.
+
+## 0.8.7
+- Send a receive-only discovery packet so the ESP bridge can route MAVLink telemetry directly to the phone before control is enabled.
+- Explain missing heartbeat when Enable Control is tapped; continue blocking all motor commands until a valid heartbeat arrives.
+- Print ESP UART frame and Wi-Fi client counters to diagnose wiring, serial settings, and phone connectivity.
+
+## 0.8.6
+- Keep the Controls recovery map visible after Stop, link loss, and app pause while command output remains disabled.
+- Show the age of the last rover GPS fix; recenter on that fix, falling back to the last RC estimate and then Home.
+- Freeze dead reckoning on link loss and resume only after new transmitted frames, without inventing movement during an outage.
+- Save the estimated path separately from rover GPS so the recovery view survives screen rebuilds.
+
+## 0.8.5
+- Verify direct update APK signing certificate against installed TeleRC and require the exact release APK filename.
+- Ignore unverified signed MAVLink 2 heartbeats and heartbeats from non-autopilot components.
+- Serialize RC sends with Stop so a queued override cannot follow neutral and release.
+- Bound route restoration and live route history to protect storage and memory.
+
+## 0.8.4
+- Transform the Controls center card into a live dead reckoning map while control is enabled; Stop, link loss, and leaving Controls return the card.
+- Integrate only transmitted RC frames with the configured offline speed and pivot settings, label the cyan estimate, and display real rover GPS separately in purple.
+- Re-anchor the estimate once on the first valid GPS fix and keep accumulated drift visible afterward. Reset the estimate on each enable.
+- Display estimated displacement from the anchor, heading, and speed in the live map without affecting RC output.
+
+## 0.8.3
+- Replace MapLibre demo tiles with the OpenFreeMap Liberty street style used in HARU. Show a clearly labeled sample map position until precise phone GPS sets fixed Home.
+- Keep the cyan rover visible at Home, draw an estimated joystick route, and configure offline vehicle name, maximum speed, and pivot turn rate by tapping the map badge.
+- Add a Game motor loop while driving or steering and a collision sound when hitting a gate.
+
+## 0.8.2
+- Show a labeled cyan heading-aware offline rover preview on the Test map after Home GPS is fixed; keep simulation separate from measured telemetry.
+- Replace the quiet frame-driven Game beeps with a looping melody that plays while the music button is on, including while stationary; use media volume.
+
+## 0.8.1
+- Center Enable/Stop between equal-width Steer and Drive panels.
+- Keep Game road stripes continuous across course resets.
+- Draw a heading-aware rover icon from MAVLink telemetry on the Test map, including rotation in place; persist bearing in CSV.
+
+## 0.8.0
+- Record transmitted live rover controls and validated global position telemetry in the Test route session.
+- Set a fixed Home from the first precise phone GPS fix and draw later phone movement as a separate route.
+- Add MapLibre Test map with pinch, compass, route reset, CSV export, and access to the offline simulator.
+
+## 0.6.2
+- Reject truncated MAVLink 2 heartbeats without disrupting the connection loop.
+- Use monotonic time for heartbeat age and refresh the debug artifact name.
+
+## 0.6.1
+- Removed the Test Drive page heading so the course fills more of the display.
+
+## 0.6.0
+- Endless offline obstacle gates with pass counter and collision reset.
+- Direct test drive steering and throttle response, instant joystick centering, centered control labels.
+
+# Changelog
+
+## 0.5.0 — offline test drive
+- Add a third landscape tab with a retro top-down rover course, moving vehicle, speed and distance readouts, and reset.
+- Use independent steering and drive joysticks for offline practice without sending MAVLink.
+- Keep live control disabled when switching tabs or backgrounding the app.
+
+## 0.4.1 — manual direct updates
+- Add a Setup & Config update button for public GitHub release APKs.
+- Verify SHA-256 digest, package identity and version before Android installer handoff.
+- Prepare a manual signed release workflow using repository Actions signing secrets.
+
+## 0.4.0 — joystick controller
+- Replace rover sliders with visibly moving spring-return steering and drive joysticks.
+- Put Enable/Stop in a dedicated card to the right of Drive to avoid overlap.
+- Disable and neutralize controls on orientation changes.
+
+## 0.3.1 — layout refinement
+- Move tab buttons beneath the header on both pages.
+- Respect status, navigation and display-cutout insets; tighten spacing.
+
+## 0.3.0 — two-tab interface
+- Portrait Setup & Config with craft, bridge settings and link status cards.
+- Landscape Controls with separate steering and drive panels; page changes disable control.
+
+## 0.2.0 — rover private test source
+- Rover steering CH1 and bidirectional throttle CH3; spring return to 1500 µs neutral.
+- Explicit control enable after checksum-valid heartbeat; control disables on link loss, pause, or disconnect.
+- Best-effort neutral and RC override release on disable; profile model reserves other craft without activating them.
+- Local APK compilation and bench tests still pending.
+
+## 0.1.0 — source prototype
+- Local Wi-Fi UDP MAVLink RC override with heartbeat gate, timeout, disconnect, and offline endpoint persistence.
+## 0.8.0
+- Record transmitted live rover controls and validated global position telemetry in the Test route session.
+- Set a fixed Home from the first precise phone GPS fix and draw later phone movement as a separate route.
+- Add MapLibre Test map with pinch, compass, route reset, CSV export, and access to the offline simulator.
+
