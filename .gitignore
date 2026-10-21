@@ -1,0 +1,12 @@
+.gradle/
+**/build/
+local.properties
+*.jks
+*.keystore
+.env
+.idea/
+*.iml
+TeleRCLoRaConfigLocal.h
+__pycache__/
+*.pyc
+.kotlin/
