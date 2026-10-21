@@ -4,7 +4,7 @@
 // Bare TT steering motor: these bound energization time, NOT steering angle.
 // Begin with the linkage disconnected; tune for the actual gearbox and travel.
 namespace tt_car {
-constexpr uint32_t STEER_PULSE_MS=150;
+constexpr uint32_t STEER_PULSE_MS=50;
 constexpr uint32_t STEER_NEUTRAL_REARM_MS=200;
 constexpr uint8_t STEER_MIN_PWM=160;
 constexpr uint8_t STEER_MAX_PWM=200;

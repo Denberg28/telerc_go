@@ -1,3 +1,11 @@
+# TT car firmware 0.1.0 — 22 October 2026
+
+- Add independent rear drive and front TT steering on one MX1508, GPIO6/7 and GPIO4/5.
+- Bound steering to one 50 ms jog per deliberate command, with 200 ms centered-stick rearm; no assumed angle or automatic centering.
+- Reuse Go 1.0.3 Wi-Fi ownership/arming/watchdogs and optional receiver-side ELRS arbitration.
+- Add self-contained sketch packaging, source checksums, car protocol/failsafe regression and pinned actual ESP32-S3 build workflow. Four-wheel default wiring/mixing remain unchanged.
+- Physical car acceptance remains pending. See `docs/GO_TT_CAR.md`.
+
 # TeleRC Go 1.0.3
 
 - Fit settings, connection and sensitivity sheets without scroll containers;
@@ -577,12 +585,3 @@ Add isolated Waypoint map/tab, single or multi waypoint saved drafts, confirmed 
 - Record transmitted live rover controls and validated global position telemetry in the Test route session.
 - Set a fixed Home from the first precise phone GPS fix and draw later phone movement as a separate route.
 - Add MapLibre Test map with pinch, compass, route reset, CSV export, and access to the offline simulator.
-
-# TT car firmware 0.1.0 — 22 October 2026
-
-- Add independent rear drive and front TT steering on one MX1508, GPIO6/7 and GPIO4/5.
-- Bound steering to one 150 ms jog per deliberate command, with 200 ms centered-stick rearm; no assumed angle or automatic centering.
-- Reuse Go 1.0.3 Wi-Fi ownership/arming/watchdogs and optional receiver-side ELRS arbitration.
-- Add self-contained sketch packaging, source checksums, car protocol/failsafe regression and pinned actual ESP32-S3 build workflow. Four-wheel default wiring/mixing remain unchanged.
-- Physical car acceptance remains pending. See `docs/GO_TT_CAR.md`.
-

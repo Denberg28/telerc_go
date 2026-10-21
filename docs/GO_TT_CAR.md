@@ -37,7 +37,7 @@ shared deployment. The Wi-Fi control protocol is not cryptographically authentic
 
 - Right stick / CH2: rear forward/reverse only, proportional duty up to 242/255.
 - Left stick / CH1: front steering jog only. A deflection starts one pulse,
-  at most **150 ms**. The pulse ends sooner when the stick centers or changes
+  at most **50 ms**. The pulse ends sooner when the stick centers or changes
   direction. Steering duty spans 160..200/255 outside the RC deadband.
 - Holding left/right cannot restart or extend the pulse. Return the left stick
   to center continuously for **200 ms**, then deflect again for another jog.

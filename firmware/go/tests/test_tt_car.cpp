@@ -45,8 +45,8 @@ int main() {
   // Continuous commands, direction flips and sub-dwell neutral cannot extend a jog.
   tt_car::SteeringJog jog;
   assert(jog.update(1,100)==200);
-  assert(jog.update(1,249)==200);
-  assert(jog.update(1,250)==0);
+  assert(jog.update(1,149)==200);
+  assert(jog.update(1,150)==0);
   assert(jog.update(-1,251)==0);
   assert(jog.update(0,260)==0);
   assert(jog.update(0,459)==0 && !jog.ready);
@@ -59,7 +59,7 @@ int main() {
   jog.reset();assert(jog.update(0.01f,10)>=tt_car::STEER_MIN_PWM);
   assert(jog.update(0,11)==0); // Releasing is immediate even before pulse expires.
   jog.reset();assert(jog.update(1,0xffffffd0u)==200);
-  assert(jog.update(1,uint32_t(0xffffffd0u+150u))==0); // millis rollover.
+  assert(jog.update(1,uint32_t(0xffffffd0u+50u))==0); // millis rollover.
 
   fakeTime=100;setup();assert(pwmReady && wifiReady);zero();
   assert(hardware::MOTOR_COUNT==2 && hardware::PWM_CHANNELS==4);

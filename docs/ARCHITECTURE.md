@@ -1,3 +1,15 @@
+# TT car firmware 0.1.0
+
+`TeleRC_Go_TT_Car` selects the shared Go runtime with `TELERC_GO_TT_CAR=1`.
+Slot 0 drives steering on GPIO4/5; slot 2 drives the rear motor on GPIO6/7;
+slots 1/3 are inactive. `SteeringJog` limits one pulse to 50 ms and requires 200 ms
+continuous centered CH1 before another; a direction flip cancels without reversing.
+CH2 maps only to rear duty. Existing motor direction-change coast and Go
+authority/watchdogs apply to both channels. Stops reset the jog only behind the
+existing explicit neutral/ARM gate. `package-go-tt-car.py` expands the thin
+profile wrapper into one portable sketch with identical shared runtime bytes.
+No app, protocol or four-wheel product behavior changes are required.
+
 # UI and safety review — 0.8.88
 
 Balance is dropdown-only. Shared actions and compact bounded popup layouts are standardized. Session-bound Balance consent, stricter compatible MAVLink parsing and single-flight APK verification address confirmed review findings. App-only; retain balancer0.3.0. [Review, remaining gaps, gates and acceptance](UI_SAFETY_REVIEW_088.md). Final CI/build result supplies qualification; physical HIL remains BLOCKED.
@@ -117,7 +129,7 @@ Exactly one gateway connects to the motor UART. The 44-pin board is a passive br
 | Disconnect | Neutral then explicit disconnect; close old session using its captured port | Motor MCU failsafe/latch or legacy bridge handover; loss of the final message falls back to watchdog behavior |
 | Queued ARM after stop/pause/session change or age ≥500 ms | Cancel request; retries recheck current state; DISARM can still target the same captured session | No force-arm or pre-arm bypass |
 
-Dedicated controller constants: DIRECT axis timeout 500 ms, FC PWM timeout 150 ms, neutral source dwell 300 ms, selector debounce 50 ms, pairing lease 5 seconds. These are software thresholds, **not measured end-to-end stop times**. Dedicated FAILSAFE sets both PWM directions to zero; driver coast/brake and physical stopping distance require measurement. AUTOPILOT link loss does not universally stop autonomous movement. Legacy neutral refresh is 100 ms after its 500 ms command timeout.
+Dedicated controller constants: DIRECT axis timeout 500 ms, FC PWM timeout 50 ms, neutral source dwell 300 ms, selector debounce 50 ms, pairing lease 5 seconds. These are software thresholds, **not measured end-to-end stop times**. Dedicated FAILSAFE sets both PWM directions to zero; driver coast/brake and physical stopping distance require measurement. AUTOPILOT link loss does not universally stop autonomous movement. Legacy neutral refresh is 100 ms after its 500 ms command timeout.
 
 LoRa: 200 ms host command mailbox freshness, 90 ms one-use challenge window, bounded UART/radio frames, no queued control retransmission. HMAC authenticates radio frames; it does not encrypt them. UART uses CRC and a physically trusted connection. Wi-Fi/legacy MAVLink validate endpoint and framing/checksum but do not authenticate commands or reject all replay/reordering. Their accepted-packet timestamp does not prove sender creation time.
 
@@ -137,16 +149,3 @@ No paired firmware upgrade is required by the unchanged 0.8.52 wire format. The 
 ## 0.8.53 candidate compatibility
 
 Android versionCode 71 packages reviewed source `8e2e6df550f919d27d9ee00c5a6dc0ed45e9c9d2` plus release metadata/build tooling. CH1/CH2, 1500 µs neutral, UART/radio format, pins, profile, key and NVS schema remain compatible. Updated BASE preserves sparse axes and stop priority; updated ROVER latches RX restart failures; dedicated motor initializes output GPIOs before delays. PWM-only users require 300 ms fresh neutral at startup/recovery and get immediate invalid/stale-input stop. Deploy and bench-test the intended firmware roles together. The binary package uses explicit generic motor and manufacturer T3-S3 profiles, rather than treating host tests as target compilation. See `bridge/FIRMWARE_FLASHING.md` and `docs/LORA_MOTOR_REVIEW.md`.
-
-# TT car firmware 0.1.0
-
-`TeleRC_Go_TT_Car` selects the shared Go runtime with `TELERC_GO_TT_CAR=1`.
-Slot0 drives steering on GPIO4/5; slot2 drives the rear motor on GPIO6/7;
-slots1/3 are inactive. `SteeringJog` limits one pulse to150 ms and requires200 ms
-continuous centered CH1 before another; a direction flip cancels without reversing.
-CH2 maps only to rear duty. Existing motor direction-change coast and Go
-authority/watchdogs apply to both channels. Stops reset the jog only behind the
-existing explicit neutral/ARM gate. `package-go-tt-car.py` expands the thin
-profile wrapper into one portable sketch with identical shared runtime bytes.
-No app, protocol or four-wheel product behavior changes are required.
-

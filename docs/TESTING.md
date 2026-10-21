@@ -1,3 +1,26 @@
+# TT car firmware 0.1.0 — development gates
+
+Baseline: dedicated repo `6e0d8d793531bef9e3b4a54cbc1ece83d1517581`, Go app 1.0.3.
+Acceptance: CH1 changes only steering; CH2 changes only rear drive. Steering
+cannot outlast 50 ms or restart by stick hold/direction flip; continuous neutral
+200 ms permits the next jog. All existing explicit arming/source/watchdog gates
+remain. Four-wheel wiring/mixing and installed app are retained.
+
+| Gate | Evidence / status |
+| --- | --- |
+| A — source/build | Reviewed; actual ESP32-S3 builds tracked by TT-car workflow. Local Arduino toolchain unavailable. |
+| B — behavior | PASS — host simulated: independent outputs, pulse expiry, interrupted neutral, direction flip, timer rollover and no phantom channels; core 2/3 × Wi-Fi/ELRS. |
+| C — regression | PASS — normal Go Wi-Fi/RF/BTS host suite. Shared-core/legacy bridge and default sanitizer results recorded by CI; local LeakSanitizer process inspection may be blocked. |
+| D — integration | PASS — host simulated actual MAVLink receive/ARM/output and CRSF handover, loss, held ARM and PWM fault. No physical integration claim. |
+| E — HIL | BLOCKED — actual car unavailable; run `GO_TT_CAR.md` restrained-wheel procedure. |
+| F — delivery | Source packaging/checksums/ZIP verification; compiled candidate requires successful actual-board workflow. No stable promotion or app release. |
+
+Android sources are unchanged; the existing checks workflow supplies separate
+app/Go regression and lint evidence. Local Gradle cannot retrieve its distribution
+under current network access. Rollback and the next physical check are in the
+car guide. Preserve the previous image/config; do not flash the differential
+four-wheel image onto this steering/drive wiring.
+
 # Final 0.8.88 A–F result
 
 Published prerelease: https://github.com/Denberg28/TeleRC/releases/tag/v0.8.88
@@ -574,25 +597,3 @@ Final captures were visually reviewed. E physical phone permission/installer and
 rover HIL remains BLOCKED/NOT TESTED. Stable distribution was published under the
 owner's continuing authorization. See GO_LAYOUT_UPDATER_103.md for final hashes,
 installation, unchanged 1.0.2 firmware, rollback and the next physical check.
-# TT car firmware 0.1.0 — development gates
-
-Baseline: dedicated repo `6e0d8d793531bef9e3b4a54cbc1ece83d1517581`, Go app1.0.3.
-Acceptance: CH1 changes only steering; CH2 changes only rear drive. Steering
-cannot outlast150 ms or restart by stick hold/direction flip; continuous neutral
-200 ms permits the next jog. All existing explicit arming/source/watchdog gates
-remain. Four-wheel wiring/mixing and installed app are retained.
-
-| Gate | Evidence / status |
-| --- | --- |
-| A — source/build | Reviewed; actual ESP32-S3 builds tracked by TT-car workflow. Local Arduino toolchain unavailable. |
-| B — behavior | PASS — host simulated: independent outputs, pulse expiry, interrupted neutral, direction flip, timer rollover and no phantom channels; core2/3 × Wi-Fi/ELRS. |
-| C — regression | PASS — normal Go Wi-Fi/RF/BTS host suite. Shared-core/legacy bridge and default sanitizer results recorded by CI; local LeakSanitizer process inspection may be blocked. |
-| D — integration | PASS — host simulated actual MAVLink receive/ARM/output and CRSF handover, loss, held ARM and PWM fault. No physical integration claim. |
-| E — HIL | BLOCKED — actual car unavailable; run `GO_TT_CAR.md` restrained-wheel procedure. |
-| F — delivery | Source packaging/checksums/ZIP verification; compiled candidate requires successful actual-board workflow. No stable promotion or app release. |
-
-Android sources are unchanged; the existing checks workflow supplies separate
-app/Go regression and lint evidence. Local Gradle cannot retrieve its distribution
-under current network access. Rollback and the next physical check are in the
-car guide. Preserve the previous image/config; do not flash the differential
-four-wheel image onto this steering/drive wiring.
