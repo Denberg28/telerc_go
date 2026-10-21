@@ -138,3 +138,15 @@ No paired firmware upgrade is required by the unchanged 0.8.52 wire format. The 
 
 Android versionCode 71 packages reviewed source `8e2e6df550f919d27d9ee00c5a6dc0ed45e9c9d2` plus release metadata/build tooling. CH1/CH2, 1500 µs neutral, UART/radio format, pins, profile, key and NVS schema remain compatible. Updated BASE preserves sparse axes and stop priority; updated ROVER latches RX restart failures; dedicated motor initializes output GPIOs before delays. PWM-only users require 300 ms fresh neutral at startup/recovery and get immediate invalid/stale-input stop. Deploy and bench-test the intended firmware roles together. The binary package uses explicit generic motor and manufacturer T3-S3 profiles, rather than treating host tests as target compilation. See `bridge/FIRMWARE_FLASHING.md` and `docs/LORA_MOTOR_REVIEW.md`.
 
+# TT car firmware 0.1.0
+
+`TeleRC_Go_TT_Car` selects the shared Go runtime with `TELERC_GO_TT_CAR=1`.
+Slot0 drives steering on GPIO4/5; slot2 drives the rear motor on GPIO6/7;
+slots1/3 are inactive. `SteeringJog` limits one pulse to150 ms and requires200 ms
+continuous centered CH1 before another; a direction flip cancels without reversing.
+CH2 maps only to rear duty. Existing motor direction-change coast and Go
+authority/watchdogs apply to both channels. Stops reset the jog only behind the
+existing explicit neutral/ARM gate. `package-go-tt-car.py` expands the thin
+profile wrapper into one portable sketch with identical shared runtime bytes.
+No app, protocol or four-wheel product behavior changes are required.
+

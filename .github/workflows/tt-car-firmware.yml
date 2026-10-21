@@ -1,0 +1,57 @@
+name: TeleRC Go TT car firmware
+on:
+  push:
+    branches: [main, 'firmware/tt-car-*']
+    paths: ['firmware/go/**', 'scripts/package-go-tt-car.py', 'docs/GO_TT_CAR.md', '.github/workflows/tt-car-firmware.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Firmware host regression
+        run: |
+          set -o pipefail
+          mkdir -p evidence
+          firmware/go/tests/run.sh 2>&1 | tee evidence/host.txt
+          SANITIZE=1 firmware/go/tests/run.sh 2>&1 | tee evidence/sanitizers.txt
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install pinned ESP32 toolchain
+        run: |
+          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32@3.3.2 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+      - name: Stage self-contained car sketch
+        run: python3 scripts/package-go-tt-car.py --output build/tt-car --commit "$GITHUB_SHA"
+      - name: Compile Wi-Fi and Wi-Fi/ELRS car targets
+        run: |
+          for elrs in 0 1; do
+            profile=WiFi
+            if [ "$elrs" = 1 ]; then profile=WiFi-ELRS; fi
+            arduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc,USBMode=hwcdc,FlashSize=4M,PartitionScheme=default,PSRAM=disabled,FlashMode=dio --build-property "compiler.cpp.extra_flags=-DTELERC_GO_ELRS=$elrs" --output-dir "build/binaries/$profile" build/tt-car/TeleRC_Go_TT_Car
+          done
+      - name: Compile original rover profiles for compatibility
+        run: |
+          for driver in MX1508 BTS7960; do
+            for elrs in 0 1; do
+              flags="-DTELERC_GO_ELRS=$elrs"
+              if [ "$driver" = BTS7960 ]; then flags="$flags -DTELERC_DRIVER=4 -DTELERC_SUPPLY_MAX_MV=12000 -DTELERC_MOTOR_RATED_MV=12000 -DTELERC_BTS_LOGIC_VERIFIED=1"; fi
+              arduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc --build-property "compiler.cpp.extra_flags=$flags" firmware/go/TeleRC_Go_Rover
+            done
+          done
+      - name: Package compiled firmware with provenance
+        run: |
+          cp -R evidence build/tt-car/
+          python3 scripts/package-go-tt-car.py --output build/tt-car --commit "$GITHUB_SHA" --binaries build/binaries
+          cd build/tt-car
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TeleRC-Go-TT-Car-v0.1.0
+          path: |
+            build/TeleRC-Go-TT-Car-v0.1.0-*.zip
+            evidence/
+          retention-days: 30

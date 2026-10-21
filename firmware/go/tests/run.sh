@@ -7,6 +7,12 @@ out="$(mktemp /tmp/go-firmware-test.XXXXXX)"
 trap 'rm -f "$out"' EXIT
 g++ "${flags[@]}" -DTELERC_GO_ELRS=1 firmware/go/tests/test_go.cpp -o "$out"
 "$out"
+for api in 2 3; do
+  for elrs in 0 1; do
+    g++ "${flags[@]}" -DESP_ARDUINO_VERSION_MAJOR="$api" -DTELERC_GO_ELRS="$elrs" firmware/go/tests/test_tt_car.cpp -o "$out"
+    "$out"
+  done
+done
 g++ "${flags[@]}" -DTELERC_GO_ELRS=0 firmware/go/tests/test_wifi.cpp -o "$out"
 "$out"
 g++ "${flags[@]}" -DTELERC_GO_ELRS=1 -DTELERC_DRIVER=4 -DTELERC_SUPPLY_MAX_MV=12000 -DTELERC_MOTOR_RATED_MV=12000 -DTELERC_BTS_LOGIC_VERIFIED=1 firmware/go/tests/test_go.cpp -o "$out"

@@ -129,3 +129,13 @@ Next: verify the final release `BUILD_INFO.txt` and checksums, then run `docs/TE
 
 0.8.58 USB FPV: based on released v0.8.57, retaining separate sensitivities/expo and Mini rover Wi-Fi/ARM behavior. Only USB UVC receivers are supported. Phone/receiver/powered-hub integration, physical installation, visual/device QA and RF/latency behavior remain NOT TESTED. USB frames do not prove healthy FPV RF reception. Default local leak inspection is blocked by the runtime; the cloud workflow retains default ASan/UBSan/leak checks before prerelease publishing. No stable promotion. See USB_FPV.md.
 
+# TT car firmware 0.1.0 limits
+
+Bare TT steering has no position/end-stop/current feedback. Neutral cuts power
+without wheel centering. Pulse limits bound energization only; repeated jogs can
+still reach mechanical stops. Gearbox travel, torque, stall current, supply,
+PWM effectiveness and physical stop times require actual-car acceptance.
+Source and binary build evidence must not be described as hardware validation.
+MX1508 is the only car driver profile; the optional receiver image needs the
+documented SA/CH7 assignment. Details and executable HIL: [GO_TT_CAR.md](GO_TT_CAR.md).
+
