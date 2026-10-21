@@ -72,6 +72,9 @@ def main():
         record = json.loads((options.output / "BUILD_PROFILE.json").read_text())
         if record["source_commit"] != options.commit:
             raise RuntimeError("Source commit mismatch; refuse to package")
+        for relative, expected in record["source_files"].items():
+            if digest(options.output / relative) != expected:
+                raise RuntimeError(f"Staged source changed after provenance capture: {relative}")
     else:
         stage(root, options.output, options.commit)
     print(archive(options.output, options.binaries))

@@ -45,3 +45,7 @@ checks PASS. Normal bridge and Go firmware host regressions PASS. Default
 LeakSanitizer runs are BLOCKED in this local runtime because /proc task inspection
 is denied; the new GitHub runner reruns these checks without relaxing sanitizers.
 Fresh Android build/lint verification is delegated to the imported CI workflow.
+
+Follow-up on 22 October: hosted checks failed before any steps started; no
+successful new-repository Android CI is claimed. The TT-car work records actual
+local ESP32-S3 build evidence in `GO_TT_CAR_BUILD_RESULT.md`.

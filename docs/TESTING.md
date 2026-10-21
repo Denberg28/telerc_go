@@ -1,5 +1,7 @@
 # TT car firmware 0.1.0 — development gates
 
+[Final local build result and remaining hardware/CI limits](GO_TT_CAR_BUILD_RESULT.md).
+
 Baseline: dedicated repo `6e0d8d793531bef9e3b4a54cbc1ece83d1517581`, Go app 1.0.3.
 Acceptance: CH1 changes only steering; CH2 changes only rear drive. Steering
 cannot outlast 50 ms or restart by stick hold/direction flip; continuous neutral
