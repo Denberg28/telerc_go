@@ -4,9 +4,16 @@
 #ifndef TELERC_GO_ELRS
 #define TELERC_GO_ELRS 0
 #endif
-static_assert(TELERC_MOTOR_COUNT==4,"TeleRC Go packaged firmware requires four motors");
+static_assert(TELERC_GO_TT_CAR || TELERC_MOTOR_COUNT==4,"TeleRC Go rover firmware requires four motors");
+#if TELERC_GO_TT_CAR
+#include "TTCarSettings.h"
+#endif
 namespace config {
+#if TELERC_GO_TT_CAR
+constexpr char VERSION[]="0.1.0-go-tt-car";
+#else
 constexpr char VERSION[]="1.0.2-go-sa-wifi";
+#endif
 constexpr char WIFI_SSID[]="TeleRC-MiniRover";
 constexpr char WIFI_PASSWORD[]="telerc123";
 constexpr uint16_t UDP_PORT=14550;
@@ -22,7 +29,11 @@ constexpr int RC_DEADBAND_US=25;
 constexpr int RC_FULL_SCALE_US=400;
 constexpr float STEER_GAIN=TELERC_DRIVER==1 ? 1.0f : 0.50f;
 constexpr int BOOT_STOP_PIN=0, STATUS_LED_PIN=21;
+#if TELERC_GO_TT_CAR
+constexpr bool MOTOR_INVERT[4]={tt_car::INVERT_STEERING,false,tt_car::INVERT_DRIVE,false};
+#else
 constexpr bool MOTOR_INVERT[4]={false,false,false,false};
+#endif
 constexpr uint8_t MOTOR_TRIM_PERCENT[4]={100,100,100,100};
 constexpr uint8_t MOTOR_DUTY_CAP[4]={MAX_PWM,MAX_PWM,MAX_PWM,MAX_PWM};
 static_assert(sizeof(WIFI_PASSWORD)>=9 && sizeof(WIFI_PASSWORD)<=64,"Password needs 8..63 characters");

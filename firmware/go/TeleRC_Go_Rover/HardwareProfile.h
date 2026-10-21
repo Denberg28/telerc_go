@@ -7,8 +7,11 @@
 #ifndef TELERC_DRIVER
 #define TELERC_DRIVER 1
 #endif
+#ifndef TELERC_GO_TT_CAR
+#define TELERC_GO_TT_CAR 0
+#endif
 #ifndef TELERC_MOTOR_COUNT
-#define TELERC_MOTOR_COUNT 4
+#define TELERC_MOTOR_COUNT (TELERC_GO_TT_CAR ? 2 : 4)
 #endif
 #ifndef TELERC_SUPPLY_MAX_MV
 #define TELERC_SUPPLY_MAX_MV 5000
@@ -38,7 +41,13 @@ struct Pins { uint8_t a,b,extra; };
 // MX/DRV: a,b = inputs, extra unused.
 // TB/L298: a,b = direction, extra = PWM/ENA/ENB.
 // BTS: a,b = RPWM/LPWM, extra = both R_EN/L_EN joined on THAT module only.
+// TT car: slot 0 = steering (4/5), slot 2 = rear drive (6/7).
+// Slots 1 and 3 are inactive. Original rover wiring stays unchanged.
+#if TELERC_GO_TT_CAR
+constexpr Pins MOTORS[4]={{4,5,16},{8,9,18},{6,7,17},{10,11,47}};
+#else
 constexpr Pins MOTORS[4]={{4,5,16},{6,7,17},{8,9,18},{10,11,47}};
+#endif
 constexpr int GLOBAL_ENABLE=(TELERC_DRIVER==2 || TELERC_DRIVER==3) ? 2 : -1;
 constexpr uint32_t WAKE_MS=2;
 constexpr uint32_t PWM_HZ=TELERC_PWM_HZ;
@@ -57,6 +66,8 @@ inline const char *driverName() {
   return "INVALID";
 }
 static_assert(TELERC_DRIVER>=1 && TELERC_DRIVER<=5,"Unsupported TELERC_DRIVER");
+static_assert(TELERC_GO_TT_CAR==0 || TELERC_GO_TT_CAR==1,"Invalid TT car selection");
+static_assert(!TELERC_GO_TT_CAR || (TELERC_MOTOR_COUNT==2 && TELERC_DRIVER==1),"TT car requires two channels on one MX1508");
 static_assert(TELERC_MOTOR_COUNT==2 || TELERC_MOTOR_COUNT==4,"Only two or four individual motor channels are supported");
 static_assert(PWM_CHANNELS<=8,"ESP32-S3 LEDC channel budget exceeded");
 static_assert(PWM_HZ>=500 && PWM_HZ<=20000,"PWM frequency outside standard profile range");

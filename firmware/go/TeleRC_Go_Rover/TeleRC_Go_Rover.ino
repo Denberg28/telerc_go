@@ -8,6 +8,10 @@
 #include "MiniMavlink.h"
 #include "MotorOutputs.h"
 #include "CrsfReceiver.h"
+#if TELERC_GO_TT_CAR
+#include "SteeringJog.h"
+tt_car::SteeringJog steeringJog;
+#endif
 #ifndef TELERC_HOST_TEST
 #include <esp_random.h>
 #endif
@@ -42,6 +46,9 @@ motor_output::Bank motorBank;
 void coastAll() {
   motorBank.stopAll();
   for(auto &motor:motors) motor.output=0;
+#if TELERC_GO_TT_CAR
+  steeringJog.reset();
+#endif
 }
 void stopRover(bool disarm,const char *reason=nullptr) {
   state.stop(disarm); coastAll();
@@ -211,13 +218,21 @@ void updateMotors(uint32_t now) {
   if(rover::age(now,lastMotorTick)<config::MOTOR_TICK_MS) return;
   lastMotorTick=now;
   if(!state.armed || state.inhibited || !state.haveRC || bootHeld) { coastAll(); return; }
-  int16_t left=0,right=0; state.mix(left,right);
   int16_t demands[4]={};
+#if TELERC_GO_TT_CAR
+  // Separate mechanical functions; never differential/skid steering.
+  demands[0]=motors[0].update(motor_output::limitedDemand(0,
+    steeringJog.update(rover::axis(state.steer),now)),now);
+  demands[2]=motors[2].update(motor_output::limitedDemand(2,
+    int16_t(lroundf(rover::axis(state.drive)*config::MAX_PWM))),now);
+#else
+  int16_t left=0,right=0; state.mix(left,right);
   for(uint8_t i=0;i<4;++i) {
     if(!hardware::active(i)) { motors[i].output=0; continue; }
     const int16_t target=motor_output::limitedDemand(i,i<2 ? left : right);
     demands[i]=motors[i].update(target,now);
   }
+#endif
   motorBank.apply(demands,now);
   if(!motorBank.ready) { pwmReady=false; stopRover(true,"PWM_ERROR"); }
 }
@@ -253,6 +268,10 @@ void setup() {
     WiFi.softAP(config::WIFI_SSID,config::WIFI_PASSWORD,6,0,1) && udp.begin(config::UDP_PORT);
   if(!wifiReady) Serial.println("Wi-Fi unavailable; outputs remain disabled");
   Serial.printf("AP=%s IP=192.168.4.1 UDP=%u; CH1=steer CH2=drive\n",config::WIFI_SSID,config::UDP_PORT);
+#if TELERC_GO_TT_CAR
+  Serial.printf("TT car: steer=GPIO4/5 drive=GPIO6/7; jog=%lums neutral-rearm=%lums; NO automatic wheel centering\n",
+    (unsigned long)tt_car::STEER_PULSE_MS,(unsigned long)tt_car::STEER_NEUTRAL_REARM_MS);
+#endif
 }
 // Bounded serial output. An absent/slow USB terminal cannot feed or block the
 // control watchdog. Values are command and LEDC-register state, not motor feedback.

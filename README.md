@@ -6,6 +6,7 @@ takeover, compact settings and verified manual updates.
 
 - App: `go/` — `io.github.denberg28.telerc.go`, version 1.0.3 / code 4.
 - Matching four-wheel firmware: `firmware/go/TeleRC_Go_Rover/`.
+- [Two-TT car firmware](docs/GO_TT_CAR.md) ([build result](docs/GO_TT_CAR_BUILD_RESULT.md)): one rear drive motor and one front steering motor, ESP32-S3 + one MX1508. Bare-motor steering uses bounded jogs; wheel centering is manual.
 - [Operation](docs/TELERC_GO.md) · [Wiring](docs/GO_WIRING.md) · [Migration record](docs/REPOSITORY_MIGRATION.md).
 - [Existing signed APK and firmware](https://github.com/Denberg28/TeleRC/releases/tag/go-v1.0.3).
 
