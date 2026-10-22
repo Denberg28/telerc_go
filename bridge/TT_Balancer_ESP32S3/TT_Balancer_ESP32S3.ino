@@ -1,4 +1,4 @@
-/* TT Balancer 0.3.0 -- TeleRC Wi-Fi bench firmware, Arduino-ESP32 3.x.
+/* TT Balancer 0.3.2 -- TeleRC Wi-Fi bench firmware, Arduino-ESP32 3.x.
  * No external MPU library. Wire + LEDC are supplied by the ESP32 board package.
  * READ README.md BEFORE CONNECTING MOTOR POWER. Defaults forbid arming.
  */
@@ -443,7 +443,7 @@ void updateControl(const Sample &s, float dt) {
   if (fabsf(candidateOutput) <= MAX_PWM || candidateOutput*error < 0) integral = candidate;
   float raw = pd + integral;
   if (!isfinite(raw)) { fault("invalid controller"); return; }
-  if (fabsf(raw) >= MAX_PWM) {
+  if (fabsf(raw) >= MAX_PWM && fabsf(angle) > ARM_DEG) {
     if (!saturationTiming) { saturationSince = millis(); saturationTiming = true; }
     if ((uint32_t)(millis() - saturationSince) >= SATURATION_MS) {
       fault("sustained output limit"); return;
@@ -662,7 +662,7 @@ void controlStep() {
         (unsigned)mpuDiag.probe[1].ack,(unsigned)mpuDiag.probe[1].read,mpuDiag.probe[1].who,mpuDiag.probe[1].error,
         mpuDiag.reg,mpuDiag.expected,mpuDiag.actual,mpuDiag.error,mpuDiag.wanted,mpuDiag.got);
     } else n = snprintf(telemetry, sizeof(telemetry),
-                     "v0.3.0 %s wifi=%s prearm=%s last=%s verified=%u CH1=%u CH2=%u age=%lu rx=%lu reject=%lu angle=%.2f rate=%.2f pwm=%d | %s\n",
+                     "v0.3.2 %s wifi=%s prearm=%s last=%s verified=%u CH1=%u CH2=%u age=%lu rx=%lu reject=%lu angle=%.2f rate=%.2f pwm=%d | %s\n",
                      modeName(), telerc::wifiName(linkInput.wifi), telerc::armName(remoteArmBlock()),
                      telerc::armName(linkInput.lastArmBlock), (unsigned)directionsVerified,
                      linkInput.observedSteer,linkInput.observedDrive,
