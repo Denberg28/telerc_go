@@ -37,9 +37,9 @@ constexpr float KI = 0.0f;   // PWM / (degree * second). Start at zero.
 constexpr float KD = 0.70f;  // PWM / (degree / second).
 constexpr float TRIM_DEG = 0.0f; // Positive trim requests a forward lean.
 constexpr float INTEGRAL_LIMIT = 25.0f; // PWM contribution, anti-windup.
-constexpr int MAX_PWM = 160; // 0..255. Initial bench cap, not current limiting.
+constexpr int MAX_PWM = 205; // 0..255. Initial bench cap, not current limiting.
 constexpr int MIN_PWM = 0;   // Optional measured friction compensation: 0..MAX_PWM.
-constexpr int TEST_PWM = 55;
+constexpr int TEST_PWM = 85;
 constexpr uint32_t PWM_HZ = 20000;
 constexpr uint32_t PERIOD_US = 4000; // 250 Hz.
 constexpr float FILTER_TAU = 0.35f; // Complementary filter time constant, seconds.
@@ -52,7 +52,7 @@ constexpr uint32_t CALIBRATION_TIMEOUT_MS = 15000; // Complete fresh ~2.4s windo
 constexpr uint16_t SAVED_CHECK_SAMPLES = 150; // ~0.6s; motor output remains off.
 constexpr uint32_t SAVED_CHECK_TIMEOUT_MS = 5000;
 constexpr float SAVED_BIAS_RESIDUAL_DPS = 1.0f; // Recalibrate if stored bias drifted.
-constexpr uint32_t SATURATION_MS = 300;
+constexpr uint32_t SATURATION_MS = 450;
 // TeleRC legacy Wi-Fi/MAVLink endpoint. Change password before field use.
 constexpr char WIFI_SSID[] = "TeleRC-Balancer";
 constexpr char WIFI_PASSWORD[] = "telerc123";
@@ -60,8 +60,8 @@ constexpr uint16_t UDP_PORT = 14550;
 constexpr uint8_t SYSTEM_ID = 1, COMPONENT_ID = 1;
 constexpr uint32_t CONTROL_TIMEOUT_MS = 350, PEER_TIMEOUT_MS = 3500;
 constexpr uint32_t CENTER_HOLD_MS = 250;
-constexpr float MAX_LEAN_DEG = 2.0f; // Full drive stick requests this lean, not PWM.
-constexpr float MAX_YAW_PWM = 28.0f;
+constexpr float MAX_LEAN_DEG = 2.5f; // Full drive stick requests this lean, not PWM.
+constexpr float MAX_YAW_PWM = 32.0f;
 constexpr float LEAN_SLEW_DPS = 10.0f;
 constexpr float YAW_SLEW_PWM_PS = 240.0f;
 constexpr int RC_DEADBAND_US = 25, RC_FULL_SCALE_US = 400;

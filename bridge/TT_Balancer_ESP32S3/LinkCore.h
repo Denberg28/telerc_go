@@ -129,6 +129,7 @@ inline bool centered(uint16_t s,uint16_t d) { return axis(s)==0 && axis(d)==0; }
 struct Core {
   Input input;
   uint32_t peer=0, peerAt=0, centerAt=0, lastMovingRC=0;
+  uint16_t peerPort=0;
   uint8_t movingSequence=0;
   bool centerTiming=false, sequenceKnown=false, haveRC=false;
   bool armCooling=false;
@@ -139,7 +140,7 @@ struct Core {
     input.motion=false; input.fresh=false; input.armPending=false;
     input.steer=input.drive=1500; centerTiming=false; haveRC=false;
   }
-  void losePeer() { inhibit(); peer=0; input.linked=false; }
+  void losePeer() { inhibit(); peer=0; peerPort=0; input.linked=false; sequenceKnown=false; }
   void armFinished(uint32_t now) {
     input.armPending=false; armCooling=true; armCoolingAt=now;
   }
@@ -153,12 +154,12 @@ struct Core {
   }
   // A reconnect/discovery never supplies RC, grants arm or clears inhibition.
   bool claim(uint32_t source,uint16_t port,const Datagram &d,uint32_t now) {
-    if(port!=UDP_PORT || !source) return false;
-    if(peer) return peer==source;
+    if(!port || !source) return false;
+    if(peer) return peer==source && peerPort==port;
     if(d.count!=1) return false;
     const auto &p=d.packets[0];
     if(p.kind!=Kind::DISCOVER && !(p.kind==Kind::MAV && p.message.id==0)) return false;
-    inhibit(); peer=source; peerAt=now; input.linked=true;
+    inhibit(); peer=source; peerPort=port; peerAt=now; input.linked=true;
     sequenceKnown=false; return true;
   }
   ArmBlock prearm(const Status &s,uint32_t now) const {
@@ -166,6 +167,7 @@ struct Core {
     if(!s.ready) return s.physicalBlock!=ArmBlock::NONE ? s.physicalBlock : ArmBlock::NOT_READY;
     if(!peer || !input.linked) return ArmBlock::NO_PEER;
     if(!haveRC) return input.rcCount ? ArmBlock::RC_STALE : ArmBlock::NO_RC;
+    if(!input.motion || !sequenceKnown) return ArmBlock::CENTER_STICKS;
     if(!input.fresh || uint32_t(now-input.lastRC)>=CONTROL_TIMEOUT_MS) return ArmBlock::RC_STALE;
     if(!centered(input.steer,input.drive)) return ArmBlock::CENTER_STICKS;
     if(!s.armed && armCooling) return ArmBlock::COOLDOWN;
