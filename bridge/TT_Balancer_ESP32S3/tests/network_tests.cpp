@@ -44,6 +44,13 @@ int main() {
   transport::publishInput();auto in=networkInput();check(in.ready&&in.linked);
   networkStatus(s);check(transport::getStatus().ready);
   transport::heartbeat(s);check(transport::udp.lastTx.size()==17&&transport::udp.lastTx[5]==0);
+  check(mini_mav::u16(transport::udp.lastTx.data()+6)!=0 || mini_mav::u16(transport::udp.lastTx.data()+8)!=0);
+  transport::ownership(s);
+  auto own=transport::udp.lastTx;
+  check(own.size()==26&&own[5]==252);
+  check(!memcmp(own.data()+14,"TELERC_OWN",10));
+  check(mini_mav::u16(own.data()+10)==(1u|2048u|4096u));
+  check(!(mini_mav::u16(own.data()+10)&256u)); // No fictional ELRS receiver.
   transport::ack(400,5);check(transport::udp.lastTx.size()==11&&transport::udp.lastTx[8]==5);
   transport::attitude(s);check(transport::udp.lastTx.size()==36&&transport::udp.lastTx[5]==30);
   transport::statusText(telerc::ArmBlock::VERIFY_DIRECTIONS,2);

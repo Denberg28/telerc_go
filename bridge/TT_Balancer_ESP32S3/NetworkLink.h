@@ -79,10 +79,20 @@ inline void statusText(telerc::ArmBlock block,uint8_t result) {
 }
 inline void heartbeat(const telerc::Status &s) {
   uint8_t p[9]={};
+  if(!setupBoot)setupBoot=esp_random()|1u;
+  memcpy(p,&setupBoot,4); // Nonzero boot identity; never an ArduPilot mode.
   p[4]=10; p[5]=0; // GROUND_ROVER / GENERIC, never impersonate ArduPilot.
   p[6]=64 | (s.armed ? 128 : 0);
   p[7]=s.fault ? 5 : (s.armed ? 4 : (s.ready ? 3 : 2)); p[8]=3;
   send(0,p,9,50,true); lastHeartbeat=millis();
+}
+inline void ownership(const telerc::Status &s) {
+  uint8_t p[18]={}; uint32_t now=millis();memcpy(p,&now,4);
+  // Bit 11: Go ownership contract. Bit 12: local balancing must continue at
+  // zero travel on link/lifecycle loss. No physical receiver is advertised.
+  uint32_t flags=2048u|4096u|(core.peer?1u:0u)|(s.fault?512u:0u);
+  memcpy(p+4,&flags,4);memcpy(p+8,"TELERC_OWN",10);
+  send(252,p,18,44,true);
 }
 inline void attitude(const telerc::Status &s) {
   uint8_t p[28]={};
@@ -186,7 +196,7 @@ inline void task(void *) {
           completedSent=s.completedArm;
         }
         receive(now,s); // At most one <=256 byte / <=4 frame datagram per tick.
-        if(uint32_t(now-lastHeartbeat)>=250) heartbeat(s);
+        if(uint32_t(now-lastHeartbeat)>=250) {heartbeat(s);ownership(s);}
         if(core.peer && uint32_t(now-lastAttitude)>=100) attitude(s);
       } else {
         // Frozen control task: never advertise a fresh healthy heartbeat or accept ARM.

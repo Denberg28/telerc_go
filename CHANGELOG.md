@@ -1,3 +1,7 @@
+## 1.0.4 — v1.0 realignment candidate
+
+See docs/REALIGNMENT_V1.md. This is a software release candidate; hardware/stable gates remain blocked.
+
 # TeleRC Go 1.0.3
 
 - Fit settings, connection and sensitivity sheets without scroll containers;

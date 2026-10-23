@@ -17,7 +17,7 @@ internal object GoElrs {
         var c=65535; for(b in f.drop(1)) c=crc(c,b.toInt() and 255); c=crc(c,152)
         return f+byteArrayOf(c.toByte(),(c ushr 8).toByte())
     }
-    data class Status(val owner:Int,val receiver:Boolean,val stopped:Boolean,val takeover:Boolean=false,val capable:Boolean=false)
+    data class Status(val owner:Int,val receiver:Boolean,val stopped:Boolean,val takeover:Boolean=false,val capable:Boolean=false,val balancing:Boolean=false)
     fun status(frame:ByteArray,target:Int):Status? {
         // Matched firmware emits unsigned MAVLink 1 NAMED_VALUE_INT only.
         if(target !in 1..254 || frame.size!=26 || (frame[0].toInt() and 255)!=254 || frame[1].toInt()!=18 ||
@@ -26,8 +26,8 @@ internal object GoElrs {
         var c=65535; for(i in 1..23) c=crc(c,frame[i].toInt() and 255); c=crc(c,44)
         if((frame[24].toInt() and 255)!=(c and 255) || (frame[25].toInt() and 255)!=(c ushr 8)) return null
         val v=(frame[10].toInt() and 255) or ((frame[11].toInt() and 255) shl 8)
-        if(frame[12].toInt()!=0 || frame[13].toInt()!=0 || v and 0xf0fc != 0 || (v and 3)>2) return null
-        return Status(v and 3,v and 256!=0,v and 512!=0,v and 1024!=0,v and 2048!=0)
+        if(frame[12].toInt()!=0 || frame[13].toInt()!=0 || v and 0xe0fc != 0 || (v and 3)>2) return null
+        return Status(v and 3,v and 256!=0,v and 512!=0,v and 1024!=0,v and 2048!=0,v and 4096!=0)
     }
 }
 
