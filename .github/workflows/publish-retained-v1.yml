@@ -1,0 +1,72 @@
+name: Publish Go v1.0.0 from verified retained-signer and firmware builds
+on:
+  push:
+    branches: [release/verified-v1.0.0]
+    paths:
+      - .github/workflows/publish-retained-v1.yml
+      - scripts/stage_retained_v1.py
+      - docs/releases/v1.0.0-retained-signer.md
+permissions:
+  contents: read
+concurrency:
+  group: go-publish-v1.0.0
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Require successful exact signing and firmware producer jobs
+        run: |
+          gh api repos/Denberg28/TeleRC/actions/runs/39911336206 > signed-run.json
+          gh api repos/Denberg28/TeleRC/actions/runs/39911336206/jobs > signed-jobs.json
+          gh api repos/Denberg28/telerc_go/actions/runs/39902508641 > firmware-run.json
+          gh api repos/Denberg28/telerc_go/actions/runs/39902508641/jobs > firmware-jobs.json
+          gh api repos/Denberg28/TeleRC/actions/artifacts/12482254265 > signed-artifact.json
+          gh api repos/Denberg28/telerc_go/actions/artifacts/12480256956 > firmware-artifact.json
+          python - <<'PY'
+          import json
+          def read(name):return json.load(open(name+'.json'))
+          signed,firmware=read('signed-run'),read('firmware-run')
+          assert signed['conclusion']=='success'
+          assert signed['head_sha']=='d621edb54ec340dba3878775cd76909d68bed487'
+          assert firmware['head_sha']=='36323abbebfa0d02b069b4f23cb502607f65e7c0'
+          assert any(j['name']=='signed-go' and j['conclusion']=='success' for j in read('signed-jobs')['jobs'])
+          assert any(j['name']=='firmware' and j['conclusion']=='success' for j in read('firmware-jobs')['jobs'])
+          for name,run,identity in [('signed-artifact',signed,12482254265),('firmware-artifact',firmware,12480256956)]:
+              artifact=read(name)
+              assert artifact['id']==identity and artifact['expired'] is False
+              assert artifact['workflow_run']['id']==run['id']
+              assert artifact['workflow_run']['head_sha']==run['head_sha']
+          PY
+      - name: Download original bytes and verify immutable artifact digests
+        run: |
+          gh api repos/Denberg28/TeleRC/actions/artifacts/12482254265/zip > signed.zip
+          gh api repos/Denberg28/telerc_go/actions/artifacts/12480256956/zip > firmware.zip
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          assert hashlib.sha256(Path('signed.zip').read_bytes()).hexdigest()=='eabd54a7ce4323d8e7b3a18f71b2ef9980d08317ef3ad5955209c596ddb7f493'
+          assert hashlib.sha256(Path('firmware.zip').read_bytes()).hexdigest()=='d20099d128ea796429412aa1d7ab97cac6790a374e35731e49221ada08f1ac1b'
+          PY
+          python scripts/stage_retained_v1.py signed.zip firmware.zip publication docs/releases/v1.0.0-retained-signer.md
+      - name: Publish Go prerelease without replacing stable history
+        run: |
+          if gh release view v1.0.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'v1.0.0 already exists; refusing replacement.'
+            exit 1
+          fi
+          gh release create v1.0.0 --repo "$GITHUB_REPOSITORY" --target 36323abbebfa0d02b069b4f23cb502607f65e7c0 --prerelease --latest=false --title 'TeleRC Go v1.0.0 ecosystem baseline — prerelease' --notes-file docs/releases/v1.0.0-retained-signer.md publication/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TeleRC-Go-v1.0.0-complete
+          path: publication/
+          if-no-files-found: error
