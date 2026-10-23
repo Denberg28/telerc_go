@@ -1,3 +1,5 @@
+> **v1.0 realignment candidate:** see [scope, compatibility, validation and rollback](docs/REALIGNMENT_V1.md). Hardware qualification and production authentication are not complete.
+
 # TeleRC Go 1.0.3
 
 Dedicated repository: [Denberg28/telerc_go](https://github.com/Denberg28/telerc_go).
@@ -233,4 +235,5 @@ The reviewed tab follows a device → radio/pairing → link-check sequence insp
 The compact tab uses centered, equal-width landscape columns (stacked below 640 dp), 12 dp horizontal/10 dp vertical card padding, 8 dp card gaps, persistent field labels, and 48 dp controls. Pairing-key Show/Hide preserves the caret; the key is hidden again on pause/navigation/disconnect. Generate asks before replacing an existing draft. Drafts remain in memory while navigating; only a board-confirmed Save updates the private phone pairing settings. Replies time out after 3 seconds; reconnect after a missing reply before retrying.
 
 The profile remains fixed at SF7/500 kHz/CR4:5. Region tables, configurable modem presets, BLE, Meshtastic channel QR import and mesh routing are not implemented. The USB workflow needs no Wi-Fi password; the pairing key authenticates TeleRC's direct radio packets and does not encrypt payloads. Protocol and firmware are unchanged. This source review does not publish or change the installed 0.8.52 APK. See [review and device checks](docs/LORA_SETUP_REVIEW.md).
+
 

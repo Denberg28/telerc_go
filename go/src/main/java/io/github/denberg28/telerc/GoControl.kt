@@ -27,13 +27,20 @@ internal class GoControl {
  var stopped=false;private set
  private var sentNeutralAt:Long?=null
  private var firstNeutral:Long?=null
+ private var driveQualified=false
  fun fresh(now:Long)=heartbeatAt?.let{now>=it && now-it<1500}==true
  fun heartbeat(value:Boolean,now:Long) {if(!fresh(now) && heartbeatAt!=null)stop();armed=value;heartbeatAt=now}
  fun enable(now:Long):Boolean {if(!fresh(now)||armed||stopped)return false;enabled=true;return true}
+ fun resumeBalancing(now:Long):Boolean {
+  if(!fresh(now)||!armed||stopped||enabled)return false
+  enabled=true;firstNeutral=null;sentNeutralAt=null;driveQualified=false;return true
+ }
+ fun mayDrive(now:Long)=enabled&&armed&&fresh(now)&&!stopped&&driveQualified
  fun sent(s:Int,d:Int,now:Long) {
   if(!enabled || s !in 1475..1525 || d !in 1475..1525){firstNeutral=null;sentNeutralAt=null;return}
   if(sentNeutralAt==null || now<sentNeutralAt!! || now-sentNeutralAt!!>=250)firstNeutral=now
   sentNeutralAt=now
+  if(firstNeutral?.let{now>=it&&now-it>=300}==true)driveQualified=true
  }
  fun armReady(now:Long)=enabled && !stopped && fresh(now) && !armed &&
   sentNeutralAt?.let{now>=it&&now-it<200}==true && firstNeutral?.let{now-it>=300}==true
@@ -41,7 +48,7 @@ internal class GoControl {
  fun expire(now:Long):Boolean {if(enabled && !fresh(now)){stop();return true};return false}
  // Revoking phone authority must not overwrite the receiver's observed ARM state.
  // In particular, an independently armed handset remains visible during takeover.
- fun stop() {epoch++;enabled=false;firstNeutral=null;sentNeutralAt=null}
+ fun stop() {epoch++;enabled=false;firstNeutral=null;sentNeutralAt=null;driveQualified=false}
  fun disconnect(){stop();armed=false;heartbeatAt=null;stopped=false}
  fun receiverStop(value:Boolean){if(value)stop();stopped=value}
 }

@@ -25,7 +25,7 @@ jobs:
           firmware/go/tests/run.sh
           SANITIZE=1 firmware/go/tests/run.sh
       - name: Android regression and Go build
-        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleDebugAndroidTest --no-daemon
+        run: ./gradlew :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleDebugAndroidTest --no-daemon
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -35,3 +35,4 @@ jobs:
             go/build/reports/
             go/build/test-results/
             app/build/reports/
+

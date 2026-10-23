@@ -1,4 +1,4 @@
-/* TT Balancer 0.3.0 -- TeleRC Wi-Fi bench firmware, Arduino-ESP32 3.x.
+/* TT Balancer 0.3.1 -- TeleRC Wi-Fi bench firmware, Arduino-ESP32 3.x.
  * No external MPU library. Wire + LEDC are supplied by the ESP32 board package.
  * READ README.md BEFORE CONNECTING MOTOR POWER. Defaults forbid arming.
  */
@@ -8,6 +8,7 @@
 #include <math.h>
 #include <string.h>
 #include "Config.h"
+#include "SbrbPitchController.h"
 #include "BalanceTypes.h"
 #include "SensorDiagnostics.h"
 #include "NetworkLink.h"
@@ -38,6 +39,7 @@ bool balanceTaskStarted=false;
 bool directionsVerified=DIRECTIONS_VERIFIED, wheelTestComplete=false;
 const char *reason = "boot";
 float gyroBias = 0, angle = 0, rate = 0, integral = 0;
+SbrbPitchController pitchControl;
 int motorCommand = 0;
 uint8_t testMotorMask=3;
 uint32_t seenSetup=0,setupRequest=0,seenSetupStop=0,recalibrateAt=0;
@@ -79,7 +81,7 @@ void motorsOff() {
 
 void disarm(const char *why) {
   if(mode==Mode::MOTOR_TEST) {wheelTestComplete=false;if(remoteTest)setupResult="TEST_INTERRUPTED";remoteTest=false;}
-  motorsOff(); integral = 0; clearMotionRequest(); finishRemoteArm(2);
+  motorsOff(); integral = 0; pitchControl.reset(); clearMotionRequest(); finishRemoteArm(2);
   uprightTiming = saturationTiming = false;
   mode = Mode::DISARMED; reason = why;
 }
@@ -420,7 +422,7 @@ void updateControl(const Sample &s, float dt) {
     }
     if (!uprightTiming) { uprightTiming = true; uprightSince = millis(); }
     if ((uint32_t)(millis() - uprightSince) < UPRIGHT_MS) return;
-    integral = 0; mode = Mode::BALANCING; reason = "active";
+    integral = 0; pitchControl.reset(); mode = Mode::BALANCING; reason = "active";
     finishRemoteArm(0);
   }
   if (mode != Mode::BALANCING) return;
@@ -437,11 +439,9 @@ void updateControl(const Sample &s, float dt) {
     requestedYaw += limitf(desiredYaw-requestedYaw,-YAW_SLEW_PWM_PS*dt,YAW_SLEW_PWM_PS*dt);
   } else clearMotionRequest(); // Loss/release cancels travel immediately; local balance continues.
   float error = angle - (TRIM_DEG+requestedLean);
-  float pd = KP * error + KD * rate;
-  float candidate = limitf(integral + KI*error*dt, -INTEGRAL_LIMIT, INTEGRAL_LIMIT);
-  float candidateOutput = pd + candidate;
-  if (fabsf(candidateOutput) <= MAX_PWM || candidateOutput*error < 0) integral = candidate;
-  float raw = pd + integral;
+  float raw = pitchControl.step(error,rate,dt,KP,KI,KD,
+                                INTEGRAL_LIMIT,MAX_PWM,GYRO_RATE_TAU);
+  integral = pitchControl.integral;
   if (!isfinite(raw)) { fault("invalid controller"); return; }
   if (fabsf(raw) >= MAX_PWM) {
     if (!saturationTiming) { saturationSince = millis(); saturationTiming = true; }
@@ -559,7 +559,7 @@ void setup() {
   seenSetup=setupRequest=seenSetupStop=0;recalibratePending=remoteTest=false;setupResult="IDLE";testMotorMask=3;
   serialBytes=serialBootDiscard=0; serialLastByte=serialLastCommand=0;
   serialResult="IDLE"; serialReportRequested=false;
-  calibrated = false; directionsVerified=DIRECTIONS_VERIFIED; wheelTestComplete=false;
+  calibrated = false; pitchControl.reset(); directionsVerified=DIRECTIONS_VERIFIED; wheelTestComplete=false;
   const uint8_t pins[] = {LEFT_IN1, LEFT_IN2, RIGHT_IN1, RIGHT_IN2};
   for (uint8_t pin : pins) { pinMode(pin, OUTPUT); digitalWrite(pin, LOW); }
   pinMode(STOP_PIN, INPUT_PULLUP);

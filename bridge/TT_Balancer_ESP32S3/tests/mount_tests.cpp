@@ -14,12 +14,15 @@ int main() {
   assert(s.ax<0 && s.ay==0 && s.gy==10 && s.gx==0);
   assert(accelAngle(s)>5 && accelAngle(s)<6);
   updateControl(s,0.004f); assert(rate==10 && angle>0 && motorCommand==0);
-  mode=Mode::BALANCING; angle=0;
+  mode=Mode::BALANCING; angle=0; pitchControl.reset();
   updateControl(s,0.004f);
   assert(motorCommand>0 && duty[LEFT_IN1]>0 && duty[RIGHT_IN2]>0);
   Wire.frame(0,0.1f,0.995f,0);gx(1310);
   assert(readSample(s)==1 && accelAngle(s)<-5 && s.gy==-10);
-  angle=0; updateControl(s,0.004f);
+  // This is the mirrored independent mounting case. Reset the rate filter,
+  // as the real arm/disarm transition does, rather than carrying a positive
+  // derivative history into a manually forced negative-angle initial state.
+  angle=0; pitchControl.reset(); updateControl(s,0.004f);
   assert(motorCommand<0 && duty[LEFT_IN2]>0 && duty[RIGHT_IN1]>0);
   disarm("mount test complete");
   Wire.frame(0.2f,0,0.98f,0);gx(0);
