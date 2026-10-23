@@ -109,8 +109,8 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
      if(!peerVerified||!mayUsePhone(n)){explicitDisarm=false;return}
      repeat(3){
       send(GoProtocol.rc(sequence++,config.system,1500,1500))
-      if(fc)send(GoProtocol.hold(sequence++,config.system))
-      if(GoStopPolicy.disarm(balancing,explicitDisarm))send(Mavlink.armDisarm(sequence++,config.system,1,false))
+      if(fc&&explicitDisarm)send(GoProtocol.hold(sequence++,config.system))
+      if(GoStopPolicy.disarm(balancing,explicitDisarm,fc))send(Mavlink.armDisarm(sequence++,config.system,1,false))
       if(!fc)send(GoProtocol.rc(sequence++,config.system,0,0))
      }
      explicitDisarm=false

@@ -26,3 +26,7 @@ the same filter reset as actual arming; a separate test bounds sign reversal.
 Non-finite integral/filter limits reject output. This is software evidence only:
 support the chassis for installation, direction checks, disarm and recovery tests.
 Actual balancing, stall/power behavior and physical acceptance remain unverified.
+
+The optional debug build property `-PcandidateInstall=true` uses package io.github.denberg28.telerc.go.candidate and label TeleRC Go Candidate. It can coexist with the signed Go installation and does not replace its settings or signing identity. The release package remains io.github.denberg28.telerc.go. Only connect one controller app at a time.
+
+For ArduRover profiles, app pause/link cleanup sends neutral without an implicit HOLD or DISARM; the configured FC mode and failsafe policy remain responsible for autonomous behavior. HOLD/DISARM from the combined button requires explicit operator intent and fresh phone permission.

@@ -30,4 +30,8 @@ class GoStopPolicyTest {
         for (result in listOf(1, 2, 3, 4, 6, 255))
             assertFalse(GoStopPolicy.armReplyPending(result))
     }
+    @Test fun autopilotLifecycleLossDoesNotDisarmOrChangeItsMissionPolicy() {
+        assertFalse(GoStopPolicy.disarm(false, false, true))
+        assertTrue(GoStopPolicy.disarm(false, true, true))
+    }
 }
