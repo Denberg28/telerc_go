@@ -11,7 +11,7 @@ See [wallpaper change and verification](docs/GO_WALLPAPER_105.md).
 - App: `go/` — `io.github.denberg28.telerc.go`, version 1.0.5 / code 1001.
 - Matching four-wheel firmware: `firmware/go/TeleRC_Go_Rover/`.
 - [Operation](docs/TELERC_GO.md) · [Wiring](docs/GO_WIRING.md) · [Migration record](docs/REPOSITORY_MIGRATION.md).
-- [Existing signed APK and firmware](https://github.com/Denberg28/TeleRC/releases/tag/go-v1.0.3).
+- [Existing signed APK and firmware](https://github.com/Denberg28/telerc_go/releases/tag/v1.0.0).
 
 Build: `./gradlew :go:assembleDebug`. Java 17 and Android SDK 35 are required.
 Shared resources and regression sources remain in `app/`; Go has its own package.

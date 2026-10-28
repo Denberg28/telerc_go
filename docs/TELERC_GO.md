@@ -18,6 +18,11 @@ pending ARM; returning never resumes driving automatically.
 The transparent joystick panels and inset navy power icon remain.
 [1.0.5 verification and installation status](GO_WALLPAPER_105.md).
 
+The wallpaper update retains the published ecosystem v1.0.0 app runtime
+(Android 1.0.4/code 1000), including balancer-specific pause/resume behavior.
+The four-wheel/FC guide below describes the older Go baseline. For a balancer,
+retain the [released balancer setup and stop policy](https://github.com/Denberg28/telerc_go/blob/b6b0138191ac3d29e1702982e6006796142718ff/docs/GO_BALANCER_V1.md).
+
 ## Connect and drive
 
 1. Flash the matching **Go 1.0.2** standalone firmware from this release. Choose

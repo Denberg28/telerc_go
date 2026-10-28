@@ -133,13 +133,14 @@ class GoInstrumentation:Instrumentation(){
   waitForIdleSync();a=launch()
   main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width==320)}
   for(scale in listOf("1.0","1.3")){
+   main{a.finish()};waitForIdleSync()
    if(scale=="1.3"){
     android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand("wm size 1280x720")).use{it.readBytes()}
     android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand("wm density 320")).use{it.readBytes()}
    }
    android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand("settings put system font_scale $scale")).use{it.readBytes()}
    waitFor{if(scale=="1.3")targetContext.resources.configuration.fontScale>=1.25f else targetContext.resources.configuration.fontScale<1.1f}
-   main{a.finish()};waitForIdleSync();a=launch()
+   a=launch()
    tap(a,"Settings");fit(a);shot("go-$scale-settings.png")
    tap(a,"Background");fit(a);shot("go-$scale-background.png");tap(a,"Done")
   }
