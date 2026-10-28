@@ -11,6 +11,15 @@ capture() {
 trap capture EXIT
 adb install -r go/build/outputs/apk/debug/go-debug.apk
 adb install -r go/build/outputs/apk/androidTest/debug/go-debug-androidTest.apk
+# API 35 applies its initial dynamic-color overlays shortly after boot. Wait
+# for that known system relaunch before retaining an Activity in the UI harness.
+ready=false
+for attempt in {1..30}; do
+ if adb logcat -d -s ThemeOverlayController | grep -q 'ThemeOverlayController ready with user 0'; then ready=true; break; fi
+ sleep 1
+done
+if [ "$ready" != true ]; then echo 'Initial Android theme setup did not settle'; exit 1; fi
+sleep 2
 adb shell am instrument -r -w -e wallpaperOnly true "$PKG.test/io.github.denberg28.telerc.GoInstrumentation" | tee go/build/wallpaper-evidence/result.txt
 grep 'INSTRUMENTATION_CODE: -1' go/build/wallpaper-evidence/result.txt
 grep 'PASS: gallery image picker' go/build/wallpaper-evidence/result.txt
