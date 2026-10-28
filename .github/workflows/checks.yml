@@ -18,6 +18,7 @@ jobs:
       - run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"'
       - name: Shared sources and firmware host regression
         run: |
+          python3 -m unittest discover -s scripts -p 'test_*release*.py' -v
           python3 scripts/sync-go-core.py --check
           python3 bridge/sync_motor_core.py --check
           bridge/tests/run.sh
