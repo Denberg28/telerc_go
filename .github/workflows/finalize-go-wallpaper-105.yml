@@ -1,0 +1,96 @@
+name: Verify and publish the uploaded Go 1.0.5 draft
+on:
+  push:
+    branches: [release/publish-go-v1.0.5]
+    paths: [.github/workflows/finalize-go-wallpaper-105.yml]
+permissions:
+  contents: read
+concurrency:
+  group: go-publish-v1.0.5
+  cancel-in-progress: false
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GO_SOURCE: cfce723beb37b7445dd96725bffdafb31c25ba02
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Recover the original qualified publication without replacing any assets
+        run: |
+          gh api repos/Denberg28/telerc_go/actions/artifacts/12857332012 > publication-artifact.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40781123231/jobs > publication-jobs.json
+          gh api repos/Denberg28/TeleRC/actions/runs/40780129259 > signing-run.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40780005483 > checks-run.json
+          gh api repos/Denberg28/telerc_go/actions/artifacts/12857332012/zip > publication.zip
+          gh api repos/Denberg28/telerc_go/releases/427267726 > draft.json
+          python3 - <<'PY'
+          import hashlib,json,os,subprocess,zipfile
+          from pathlib import Path
+          from scripts.release_safety import check_archive,check_directory
+          artifact=json.load(open('publication-artifact.json'))
+          expected_digest='sha256:9dbbe48fd14939e217b6ec646e526ec9dc500450143fdb43d20529bd15d5241c'
+          assert artifact['id']==12857332012 and artifact['expired'] is False
+          assert artifact['workflow_run']['id']==40781123231
+          assert artifact['workflow_run']['head_sha']=='136a61c3410869a9042e2669c3ea8d2f999876cb'
+          assert artifact['digest']==expected_digest=='sha256:'+hashlib.sha256(Path('publication.zip').read_bytes()).hexdigest()
+          jobs=json.load(open('publication-jobs.json'))['jobs']
+          job=next(j for j in jobs if j['id']==123142767385)
+          for name in ['Require qualified producers, exact APK/source and complete evidence','Create an isolated draft with the complete verified asset set']:
+              assert any(s['name']==name and s['conclusion']=='success' for s in job['steps'])
+          for name,run_id,sha in [('signing-run.json',40780129259,'95017c90ef4db8d3cc178a9073df964f24d39250'),('checks-run.json',40780005483,os.environ['GO_SOURCE'])]:
+              run=json.load(open(name));assert run['id']==run_id and run['head_sha']==sha and run['conclusion']=='success'
+          expected={'APK_VERIFICATION.json','BUILD_INFO.txt','RELEASE_NOTES.md','RELEASE_STATUS.json','SHA256SUMS.txt','SIGNER_SHA256SUMS.txt','SIGNING_PROVENANCE.json','TeleRC-Go-v1.0.5-test-evidence.zip','TeleRC-Go-v1.0.5.apk','WALLPAPER_GUIDE.md','telerc_go-v1.0.5-source.zip'}
+          check_archive('publication.zip')
+          with zipfile.ZipFile('publication.zip') as archive:
+              assert set(archive.namelist())==expected
+              archive.extractall('publication')
+          check_directory('publication')
+          verification=json.load(open('publication/APK_VERIFICATION.json'))
+          assert verification['source_commit']==os.environ['GO_SOURCE']
+          assert verification['package']=='io.github.denberg28.telerc.go' and verification['version']=='1.0.5' and verification['version_code']==1001
+          assert verification['signer_sha256']==['5e57bd9bb3d10d97e5abdad4c51dbf5282708db73f1844fac272403952f9f5ec']
+          release=json.load(open('draft.json'))
+          assert release['id']==427267726 and release['draft'] is True and release['prerelease'] is True
+          assert release['tag_name']=='go-v1.0.5' and release['target_commitish']==os.environ['GO_SOURCE']
+          assets={a['name']:a for a in release['assets']};assert set(assets)==expected
+          downloaded=Path('downloaded');downloaded.mkdir()
+          for name,asset in assets.items():
+              original=Path('publication')/name
+              digest=hashlib.sha256(original.read_bytes()).hexdigest()
+              assert asset['digest']=='sha256:'+digest and asset['size']==original.stat().st_size
+              with (downloaded/name).open('wb') as output:
+                  subprocess.run(['gh','api',f"repos/{os.environ['GITHUB_REPOSITORY']}/releases/assets/{int(asset['id'])}",'-H','Accept: application/octet-stream'],stdout=output,check=True)
+              assert hashlib.sha256((downloaded/name).read_bytes()).hexdigest()==digest
+          for line in Path('publication/SHA256SUMS.txt').read_text().splitlines():
+              digest,name=line.split('  ',1);assert name in expected
+              assert hashlib.sha256((downloaded/name).read_bytes()).hexdigest()==digest
+          Path('VERIFIED_DRAFT.json').write_text(json.dumps(dict(release_id=release['id'],source_commit=os.environ['GO_SOURCE'],verified_assets=sorted(expected),apk_sha256=verification['sha256']),indent=2)+'\n')
+          print('PASS: all 11 original draft assets downloaded and matched verified source, signer, versions and checksums.')
+          PY
+      - name: Publish the verified release by its immutable release ID
+        run: |
+          gh api --method PATCH repos/Denberg28/telerc_go/releases/427267726 -F draft=false -F prerelease=true -f make_latest=false > final-release.json
+          gh api repos/Denberg28/telerc_go/git/ref/tags/go-v1.0.5 > final-tag.json
+          python3 - <<'PY'
+          import json,os
+          release=json.load(open('final-release.json'));tag=json.load(open('final-tag.json'))
+          assert release['id']==427267726 and release['draft'] is False and release['prerelease'] is True
+          assert release['target_commitish']==os.environ['GO_SOURCE'] and tag['object']['sha']==os.environ['GO_SOURCE']
+          print('PASS: signed production Go 1.0.5 prerelease published:',release['html_url'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TeleRC-Go-v1.0.5-publication-verification
+          path: |
+            VERIFIED_DRAFT.json
+            final-release.json
+            final-tag.json
+          if-no-files-found: warn
