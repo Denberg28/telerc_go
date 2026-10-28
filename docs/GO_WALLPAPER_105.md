@@ -39,12 +39,12 @@ while loading/importing. The bundled photo and transparent controls are retained
 
 | Gate | Status | Evidence / limit |
 | --- | --- | --- |
-| A — source/build | Reviewed; cloud pending | Shared-source checks PASS; local wrapper blocked by network and missing SDK. Debug/release builds and lint requested in CI. |
-| B — behavior | Cloud pending | Go policy unit tests; native synthetic gallery picker, cancellation, valid/corrupt/oversize import and rollback. |
-| C — regression | Host PASS; cloud pending | Normal bridge host suite PASS. Local LeakSanitizer blocked by denied /proc task inspection; default sanitizers remain required in CI. |
-| D — integration | Cloud pending | Native wallpaper rendering, restart/rebuild persistence, restore-default persistence, normal/1.3 text on short landscape sheets. |
-| E — phone/HIL | BLOCKED — not hardware tested | No attached phone/rover. Actual gallery providers, upgrade/signing, interruption and restrained-wheel no-auto-rearm checks remain. |
-| F — delivery | Review source pending | Candidate code 1001; retained signer is external. No release/stable promotion or installable retained-signer APK claimed. |
+| A — source/build | PASS — build verified | Go debug/release builds, debug/release lint, full-app debug build/lint/tests; cloud runs 40753021733 and 40753202767. Release build is unsigned when the retained key is absent. |
+| B — behavior | PASS — software tested | 23 Go JVM tests, zero failures/errors/skips; shared importer bounds and retained released stop/resume regressions. |
+| C — regression | PASS — cloud verified | Both shared-source checks, normal bridge host suite and default ASan/UBSan/LeakSanitizer checks. Local /proc limitation remains local only. |
+| D — integration | PASS — native simulator tested | API 35 gallery-result interception, cancellation, photo render, corrupt/oversize rollback, rebuild/restart persistence, restore-default persistence and fitted normal/1.3 text on short landscape sheets. Final screenshots visually reviewed; no AndroidRuntime exception. |
+| E — phone/HIL | BLOCKED — not hardware tested | No attached phone/rover. Actual gallery providers, retained-signer upgrade and restrained-wheel interruption/no-auto-rearm checks remain. |
+| F — delivery | PASS — preview packaged; production signing pending | Independent Candidate package/signature/version/alignment/ZIP/checksum verified. Production APK remains unsigned without the retained signing environment; no production release/stable promotion. |
 
 The baseline independently deleted `firmware/go` (including its tests). CI no
 longer invokes those nonexistent paths; bridge checks and all Android tests stay
@@ -72,5 +72,37 @@ No rover firmware reflash is needed. Restore default rolls back wallpaper only.
 For an app rollback retain the signed 1.0.4 APK; Android downgrade may require
 uninstall/data loss. Do not erase receiver or motor configuration.
 
-Next check: inspect both final CI jobs, visually inspect their screenshots and
-record their commit/run IDs here before presenting this candidate as build verified.
+## Final software evidence and preview
+
+Verified source head: `c58e30e60c7a8d9819e3abaf0c25a1dacf2b9338`.
+Both jobs PASS: https://github.com/Denberg28/telerc_go/actions/runs/40753202767 .
+Final screenshots show all settings and Background actions clear and unclipped at
+normal text and 1.3 text on the 640 × 360 dp landscape test. The API 35 first-boot
+color-overlay relaunch is allowed to settle before the UI harness retains an
+Activity; synthetic gallery files come from a separate plain-Java test provider.
+The test APK/provider is excluded from production and preview APKs.
+
+Delivered preview: `TeleRC-Go-v1.0.5-Candidate.apk`, 1,321,207 bytes,
+`io.github.denberg28.telerc.go.candidate`, version 1.0.5/code 1001.
+Producer: https://github.com/Denberg28/telerc_go/actions/runs/40753021733 .
+That run verified APK signature, alignment, exact package/version and ZIP CRCs.
+Producer checkout: `789e50cd07181485dee3588c332cd7d37653c851` (PR merge checkout
+for head `2c7dcb84d485c1527d4f9d1af97e6487181b22d5`). The final head changes only
+instrumentation toast timing; production main sources and build configuration
+match the preview producer byte for byte.
+
+SHA-256:
+`457686d4a351eb0c032cad4e10f9d92a5f1eba2d464a99aaa83eb98a30c8dd8c`.
+
+The Candidate installs alongside production and has separate settings. It is a
+debug-signed preview, not an in-place production upgrade. Keep the existing Go
+installation/data. A production upgrade still requires the external retained
+signing environment, actual phone installation checks and a separate release.
+
+Review source: https://github.com/Denberg28/telerc_go/pull/5 .
+The evidence-only documentation commit following this verified head changes no
+application, test or workflow code.
+
+Next check: use the Candidate on the actual phone to import a local gallery photo,
+relaunch, restore default and exercise the raised-wheel sequence above. Build the
+production APK with the retained signer before attempting an in-place upgrade.

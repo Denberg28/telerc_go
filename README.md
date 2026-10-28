@@ -6,7 +6,10 @@ takeover, compact settings and verified manual updates.
 
 **Settings → Background → Choose image** imports a photo from the Android
 gallery/document picker. **Restore default** returns to the supplied ship image.
-See [wallpaper change and verification](docs/GO_WALLPAPER_105.md).
+See [wallpaper change, preview and final verification](docs/GO_WALLPAPER_105.md).
+Software checks pass; an independent Candidate APK is available in the
+[verified build artifacts](https://github.com/Denberg28/telerc_go/actions/runs/40753021733).
+The production APK upgrade still needs the retained signing environment.
 
 - App: `go/` — `io.github.denberg28.telerc.go`, version 1.0.5 / code 1001.
 - Matching four-wheel firmware: `firmware/go/TeleRC_Go_Rover/`.

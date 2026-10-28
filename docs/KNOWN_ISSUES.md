@@ -1,10 +1,13 @@
 # Go wallpaper verification
 
-1.0.5 local Android checks are blocked by the unavailable Android SDK/Gradle
-distribution network. Cloud and physical phone gallery acceptance are tracked in
-[GO_WALLPAPER_105.md](GO_WALLPAPER_105.md). The baseline removed firmware/go, so
-its stale host-test commands were removed from app CI; firmware is not rebuilt or
-qualified by this change. No signed release or phone-installation claim yet.
+1.0.5 software verification PASS: both cloud jobs in run 40753202767. The
+[final evidence and preview checksum](GO_WALLPAPER_105.md) record 23 Go tests,
+Android builds/lint, default host sanitizers, native wallpaper tests and visual QA.
+The independent Candidate APK is debug-signed; production signing and actual
+phone/gallery-provider/HIL acceptance remain pending. The local SDK/network and
+/proc restrictions are resolved for software verification by the cloud runner.
+The baseline removed firmware/go, so its stale test calls were removed from CI;
+firmware is not rebuilt or qualified by this app-only change.
 
 # UI and safety review — 0.8.88
 
