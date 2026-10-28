@@ -1,3 +1,12 @@
+# Published Go 1.0.5 prerelease
+
+[Final signed release result](RELEASE_RESULT_GO_105.md): production APK, same
+signer, code 1001, 23 Go tests, 18 packaging tests and all 11 release assets
+verified. [GitHub release](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.5).
+No firmware reflash. Actual phone/gallery-provider and restrained-wheel acceptance
+remain pending. This result supersedes earlier production-signing-pending and
+Candidate-only statements retained below as review history.
+
 # Go wallpaper verification
 
 1.0.5 software verification PASS: both cloud jobs in run 40753202767. The
