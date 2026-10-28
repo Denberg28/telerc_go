@@ -105,6 +105,8 @@ class GoInstrumentation:Instrumentation(){
    tap(a,"Settings");tap(a,"Background");fit(a);tap(a,"Choose image")
    waitFor{monitor.hits==1};waitForIdleSync();imageReady(a)
    main{check(!a.link.snapshot().enabled&&!a.link.snapshot().pending)}
+   // Let Android's result/error toast expire before capturing another sheet.
+   if(result==Activity.RESULT_OK)Thread.sleep(3800)
   }finally{removeMonitor(monitor)}
  }
  private fun verifyWallpaper(){
