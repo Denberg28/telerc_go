@@ -1,0 +1,94 @@
+name: Publish verified TeleRC Go 1.0.5 wallpaper prerelease
+on:
+  push:
+    branches: [release/publish-go-v1.0.5]
+    paths:
+      - .github/workflows/publish-go-wallpaper-105.yml
+      - scripts/stage_go_wallpaper_105.py
+permissions:
+  contents: read
+concurrency:
+  group: go-publish-v1.0.5
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GO_SOURCE: cfce723beb37b7445dd96725bffdafb31c25ba02
+      TAG: go-v1.0.5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Fetch immutable signing and software producer metadata
+        run: |
+          mkdir meta
+          gh api repos/Denberg28/TeleRC/actions/runs/40780129259 > meta/signed-run.json
+          gh api repos/Denberg28/TeleRC/actions/runs/40780129259/jobs > meta/signed-jobs.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40780005483 > meta/checks-run.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40780005483/jobs > meta/checks-jobs.json
+          gh api repos/Denberg28/TeleRC/actions/artifacts/12856512527 > meta/signed-artifact.json
+          gh api repos/Denberg28/telerc_go/actions/artifacts/12856915731 > meta/native-artifact.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40780005483/artifacts > meta/artifacts.json
+          checks_id=$(python3 -c 'import json; a=[x for x in json.load(open("meta/artifacts.json"))["artifacts"] if x["name"]=="TeleRC-Go-checks"]; assert len(a)==1; print(a[0]["id"])')
+          gh api "repos/Denberg28/telerc_go/actions/artifacts/$checks_id" > meta/checks-artifact.json
+          gh api repos/Denberg28/TeleRC/actions/artifacts/12856512527/zip > signed.zip
+          gh api repos/Denberg28/telerc_go/actions/artifacts/12856915731/zip > native.zip
+          gh api "repos/Denberg28/telerc_go/actions/artifacts/$checks_id/zip" > checks.zip
+      - name: Require qualified producers, exact APK/source and complete evidence
+        run: python3 scripts/stage_go_wallpaper_105.py signed.zip checks.zip native.zip meta publication
+      - name: Create an isolated draft with the complete verified asset set
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'Release already exists; refusing replacement.'
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo 'Tag already exists; refusing to retarget it.'
+            exit 1
+          fi
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GO_SOURCE" --draft --prerelease --latest=false --title 'TeleRC Go 1.0.5 — custom wallpaper prerelease' --notes-file publication/RELEASE_NOTES.md publication/*
+      - name: Verify hosted draft bytes before publication
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > draft.json
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir downloaded
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          release=json.loads(Path('draft.json').read_text())
+          assert release['draft'] is True and release['prerelease'] is True
+          assert release['target_commitish']==os.environ['GO_SOURCE']
+          expected={p.name:p for p in Path('publication').iterdir() if p.is_file()}
+          assets={a['name']:a for a in release['assets']}
+          assert set(assets)==set(expected)
+          assert {p.name for p in Path('downloaded').iterdir()}==set(expected)
+          for name,path in expected.items():
+              digest=hashlib.sha256(path.read_bytes()).hexdigest()
+              assert assets[name]['digest']=='sha256:'+digest
+              assert assets[name]['size']==path.stat().st_size
+              assert hashlib.sha256((Path('downloaded')/name).read_bytes()).hexdigest()==digest
+          print('PASS: all uploaded draft assets downloaded and verified byte for byte.')
+          PY
+      - name: Publish authorized prerelease and retain stable channel
+        run: |
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > final-release.json
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" > final-tag.json
+          python3 - <<'PY'
+          import json,os
+          release=json.load(open('final-release.json'));tag=json.load(open('final-tag.json'))
+          assert release['draft'] is False and release['prerelease'] is True
+          assert tag['object']['sha']==os.environ['GO_SOURCE']
+          print('PASS: exact-source public prerelease:',release['html_url'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TeleRC-Go-v1.0.5-publication
+          path: publication/
+          if-no-files-found: error
