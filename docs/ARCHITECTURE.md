@@ -1,3 +1,11 @@
+# Go private wallpaper
+
+GoActivity imports images through ACTION_OPEN_DOCUMENT into the shared
+ThemeImageStore/ThemeImagePolicy. One serialized executor orders load/import/remove
+across Activity replacement. A cached bitmap updates the existing background view;
+control/layout/transport objects are not recreated for import. The compact
+Background sheet restores the bundled fallback. See [scope](GO_WALLPAPER_104.md).
+
 # UI and safety review — 0.8.88
 
 Balance is dropdown-only. Shared actions and compact bounded popup layouts are standardized. Session-bound Balance consent, stricter compatible MAVLink parsing and single-flight APK verification address confirmed review findings. App-only; retain balancer0.3.0. [Review, remaining gaps, gates and acceptance](UI_SAFETY_REVIEW_088.md). Final CI/build result supplies qualification; physical HIL remains BLOCKED.

@@ -8,6 +8,7 @@ import android.os.Looper
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
@@ -22,6 +23,11 @@ import io.github.denberg28.telerc.go.R
 
 /** Controls and compact, fully measured sheets; opening any sheet revokes phone drive. */
 class GoActivity:Activity(){
+ companion object {
+  private const val IMAGE_REQUEST=45
+  // Serialize private-file access even when Android replaces the Activity during import.
+  private val imageExecutor=java.util.concurrent.Executors.newSingleThreadExecutor()
+ }
  internal lateinit var link:GoLink
  internal lateinit var updater:GoUpdater
  private val ui=Handler(Looper.getMainLooper())
@@ -39,6 +45,10 @@ class GoActivity:Activity(){
  private var responseDirty=false
  private var updateMessage:TextView?=null
  private var updateDialog:Dialog?=null
+ private var wallpaper:ImageView?=null
+ private var themeBitmap:Bitmap?=null
+ private var imageWork=false
+ private var pendingImageUri:android.net.Uri?=null
  private fun dp(value:Int)=(value*resources.displayMetrics.density+.5f).toInt()
  private fun row()=dp(48)
  private fun text(value:String,size:Float=14f)=TextView(this).apply{
@@ -57,6 +67,7 @@ class GoActivity:Activity(){
   link=GoLink(this){ui.removeCallbacks(refreshTask);ui.post(refreshTask)}
   updater=GoUpdater(this,::updateReport,::offerUpdate)
   render()
+  imageTask(null){ThemeImageStore.load(applicationContext)}
  }
  private val refreshTask=Runnable{if(!isFinishing&&!isDestroyed)refresh()}
  private fun endpoint()=GoEndpoint(GoProfile.WIFI,prefs.getString("WIFI.host","192.168.4.1")?:"192.168.4.1",
@@ -71,7 +82,8 @@ class GoActivity:Activity(){
  private fun render(){
   dismissSheet();resetSticks();left=null;right=null
   val frame=FrameLayout(this)
-  frame.addView(ImageView(this).apply{setImageResource(R.drawable.go_background);scaleType=ImageView.ScaleType.CENTER_CROP;importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO},FrameLayout.LayoutParams(-1,-1))
+  wallpaper=backgroundImage().apply{tag="go-wallpaper"}
+  frame.addView(wallpaper,FrameLayout.LayoutParams(-1,-1))
   frame.addView(View(this).apply{setBackgroundColor(0x28071120)},FrameLayout.LayoutParams(-1,-1))
   val root=LinearLayout(this).apply{
    keepScreenOn=true;orientation=LinearLayout.VERTICAL;setPadding(dp(12),dp(8),dp(12),dp(8))
@@ -126,8 +138,8 @@ class GoActivity:Activity(){
   if(!::link.isInitialized)return
   val s=link.snapshot();status?.text=s.text
   arm?.text=when{s.handset->"Radio control";s.pending->"Cancel arming";s.armed->"DISARM";else->"ARM"}
-  arm?.isEnabled=!s.handset&&(s.pending||s.fresh&&s.verified&&!s.stopped)
-  val canDrive=s.fresh&&s.enabled&&s.armed&&!s.handset
+  arm?.isEnabled=!imageWork&&!s.handset&&(s.pending||s.fresh&&s.verified&&!s.stopped)
+  val canDrive=!imageWork&&s.fresh&&s.enabled&&s.armed&&!s.handset
   if(left?.isEnabled!=canDrive)left?.isEnabled=canDrive
   if(right?.isEnabled!=canDrive)right?.isEnabled=canDrive
   connect?.text=if(s.connected)"Disconnect" else "Phone connect"
@@ -160,10 +172,77 @@ class GoActivity:Activity(){
  }
  private fun settings(){
   val body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
-  for((index,item) in listOf("Wi-Fi settings" to {startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))},"Connection details" to {connectionDetails()},"Sensitivity" to {sensitivity()}).withIndex()){
-   body.addView(button(item.first){item.second()},LinearLayout.LayoutParams(-1,row()).apply{if(index>0)topMargin=dp(8)})
+  val actions=listOf("Wi-Fi settings" to {startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))},"Connection details" to {connectionDetails()},"Sensitivity" to {sensitivity()},"Background" to {backgroundSettings()})
+  for((index,items) in actions.chunked(2).withIndex()){
+   val line=LinearLayout(this).apply{isBaselineAligned=false}
+   for((column,item) in items.withIndex())line.addView(button(item.first){item.second()},LinearLayout.LayoutParams(0,row(),1f).apply{if(column>0)leftMargin=dp(8)})
+   body.addView(line,LinearLayout.LayoutParams(-1,-2).apply{if(index>0)topMargin=dp(8)})
   }
   dialog("Controls settings",body)
+ }
+ private fun backgroundImage()=ImageView(this).apply{
+  themeBitmap?.let{setImageBitmap(it)}?:setImageResource(R.drawable.go_background)
+  scaleType=ImageView.ScaleType.CENTER_CROP
+  importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+ }
+ private fun backgroundSettings(){
+  if(imageWork){Toast.makeText(this,"Loading background…",Toast.LENGTH_SHORT).show();return}
+  val body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+  body.addView(backgroundImage().apply{tag="go-background-preview"},LinearLayout.LayoutParams(-1,dp(80)))
+  val actions=LinearLayout(this).apply{isBaselineAligned=false}
+  actions.addView(button("Choose image"){chooseBackground()},LinearLayout.LayoutParams(0,row(),1f))
+  actions.addView(button("Restore default"){
+   dismissSheet()
+   imageTask("Default background restored"){ThemeImageStore.remove(applicationContext);null}
+  }.apply{isEnabled=themeBitmap!=null||ThemeImageStore.exists(this@GoActivity)},LinearLayout.LayoutParams(0,row(),1f).apply{leftMargin=dp(8)})
+  body.addView(actions,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+  dialog("Background",body)
+ }
+ @Suppress("DEPRECATION")
+ private fun chooseBackground(){
+  if(imageWork)return
+  link.stop(true);resetSticks();dismissSheet();refresh()
+  try{
+   startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{
+    addCategory(Intent.CATEGORY_OPENABLE);type="image/*";addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+   },IMAGE_REQUEST)
+  }catch(_:android.content.ActivityNotFoundException){Toast.makeText(this,"No image picker available",Toast.LENGTH_LONG).show()}
+ }
+ /** Decode, bound and atomically save with the full TeleRC photo importer. */
+ private fun imageTask(success:String?,work:()->Bitmap?){
+  if(imageWork)return
+  if(success!=null){link.stop(true);resetSticks()}
+  imageWork=true;refresh()
+  imageExecutor.execute{
+   var failure:String?=null
+   val image=try{work()}catch(error:Exception){failure=error.message?:"Image could not be imported";null}
+    catch(_:OutOfMemoryError){failure="Image is too large; choose a smaller photo";null}
+   ui.post{
+    imageWork=false
+    if(!isFinishing&&!isDestroyed){
+     if(failure==null){
+      themeBitmap=image
+      if(image==null)wallpaper?.setImageResource(R.drawable.go_background)else wallpaper?.setImageBitmap(image)
+     }
+     refresh()
+     (failure?:success)?.let{Toast.makeText(this,it,Toast.LENGTH_LONG).show()}
+     pendingImageUri?.let{uri->
+      pendingImageUri=null
+      imageTask("Background image saved"){ThemeImageStore.importImage(applicationContext,uri)}
+     }
+    }
+   }
+  }
+ }
+ @Deprecated("Activity result used for the Android document picker")
+ override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
+  super.onActivityResult(requestCode,resultCode,data)
+  if(requestCode!=IMAGE_REQUEST||resultCode!=RESULT_OK)return
+  val uri=data?.data?:return
+  // onCreate's queued load must finish first after process recreation. The same
+  // executor orders the subsequent import; the returned URI grant is temporary.
+  if(imageWork){pendingImageUri=uri;return}
+  imageTask("Background image saved"){ThemeImageStore.importImage(applicationContext,uri)}
  }
  private fun sensitivity(){
   val body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}

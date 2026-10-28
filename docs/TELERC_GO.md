@@ -1,13 +1,22 @@
-# TeleRC Go 1.0.3
+# TeleRC Go 1.0.4
 
 Wi-Fi-only rover controller. One landscape control screen: **Phone connect**,
 **Settings**, and one **ARM / DISARM** button. No Phone control button, STOP,
-Use ELRS, setup/test tabs or transport dropdown. The upper-left **TeleRC Go v1.0.3** text checks for stable Go updates when tapped.
+Use ELRS, setup/test tabs or transport dropdown. The upper-left **TeleRC Go v1.0.4** text checks for stable Go updates when tapped.
 Status and ARM/DISARM sit at the lower center. Content-sized popups use equal
 spacing, a two-column connection form and separate footer actions, with no scroll
-containers. Settings contains only Wi-Fi
-settings, Connection details, Sensitivity and Done. The supplied ship background
-and transparent joystick panels remain; the navy power mark is inset in its icon.
+containers. Settings contains Wi-Fi settings, Connection details, Sensitivity, Background and
+Done. Background → Choose image opens Android’s image picker. The photo is copied
+into private app storage, center-cropped behind the controls and retained across
+app restarts. Restore default removes the imported copy and restores the supplied
+ship image. Cancel or an unreadable/oversized image keeps the current background.
+The importer accepts up to 20 MiB and bounds the decoded image to 1920 pixels on
+its longest edge. No broad gallery permission or persistent access to the original
+photo is needed. Opening settings or the picker stops phone control and cancels
+pending ARM; returning never resumes driving automatically.
+
+The transparent joystick panels and inset navy power icon remain.
+[1.0.4 verification and installation status](GO_WALLPAPER_104.md).
 
 ## Connect and drive
 

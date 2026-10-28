@@ -1,3 +1,11 @@
+# Go wallpaper verification
+
+1.0.4 local Android checks are blocked by the unavailable Android SDK/Gradle
+distribution network. Cloud and physical phone gallery acceptance are tracked in
+[GO_WALLPAPER_104.md](GO_WALLPAPER_104.md). The baseline removed firmware/go, so
+its stale host-test commands were removed from app CI; firmware is not rebuilt or
+qualified by this change. No signed release or phone-installation claim yet.
+
 # UI and safety review — 0.8.88
 
 Balance is dropdown-only. Shared actions and compact bounded popup layouts are standardized. Session-bound Balance consent, stricter compatible MAVLink parsing and single-flight APK verification address confirmed review findings. App-only; retain balancer0.3.0. [Review, remaining gaps, gates and acceptance](UI_SAFETY_REVIEW_088.md). Final CI/build result supplies qualification; physical HIL remains BLOCKED.

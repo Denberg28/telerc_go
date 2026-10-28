@@ -12,7 +12,8 @@ import java.net.DatagramPacket
 import java.net.InetAddress
 import java.io.File
 class GoInstrumentation:Instrumentation(){
- override fun onCreate(args:Bundle?){super.onCreate(args);start()}
+ private var wallpaperOnly=false
+ override fun onCreate(args:Bundle?){super.onCreate(args);wallpaperOnly=args?.getString("wallpaperOnly")=="true";start()}
  private fun <T> main(action:()->T):T{var value:Any?=null;var failure:Throwable?=null;runOnMainSync{try{value=action()}catch(t:Throwable){failure=t}};failure?.let{throw it};@Suppress("UNCHECKED_CAST")return value as T}
  private fun waitFor(test:()->Boolean){val until=SystemClock.elapsedRealtime()+10000;while(SystemClock.elapsedRealtime()<until){if(test())return;Thread.sleep(30)};error("Timed out waiting for Go UI")}
  private fun find(v:View,text:String):View?{if(v is android.widget.TextView&&v.text.toString()==text)return v;if(v is ViewGroup)for(i in 0 until v.childCount)find(v.getChildAt(i),text)?.let{return it};return null}
@@ -69,8 +70,8 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyUpdater(a:GoActivity){
   val candidate=File(targetContext.filesDir,"update-candidate.apk");check(candidate.isFile)
   val digest=GoApkVerifier.hash(candidate)
-  check(GoApkVerifier.verify(a,candidate,digest,"1.0.4")){"Newer same-package/signer APK rejected"}
-  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.4")){"Wrong hash accepted"}
+  check(GoApkVerifier.verify(a,candidate,digest,"1.0.5")){"Newer same-package/signer APK rejected"}
+  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.5")){"Wrong hash accepted"}
   check(!GoApkVerifier.verify(a,candidate,digest,"9.9.9")){"Wrong version accepted"}
   val current=File(a.applicationInfo.sourceDir);check(!GoApkVerifier.verify(a,current,GoApkVerifier.hash(current))){"Same-code APK accepted"}
   val other=File(targetContext.filesDir,"update-wrong-package.apk");check(!GoApkVerifier.verify(a,other,GoApkVerifier.hash(other))){"Full TeleRC APK accepted"}
@@ -79,19 +80,83 @@ class GoInstrumentation:Instrumentation(){
   val messages=java.util.Collections.synchronizedList(mutableListOf<String>())
   val fake=GoUpdater(a,{messages.add(it)},{value,_->offered.set(value)},{url->
    calls.add(url)
-   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.4"},{"ref":"refs/tags/go-v1.0.5"}]"""
+   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.5"},{"ref":"refs/tags/go-v1.0.6"}]"""
    else {
-    val v=if(url.endsWith("1.0.5"))"1.0.5" else "1.0.4"
-    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.5"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
+    val v=if(url.endsWith("1.0.6"))"1.0.6" else "1.0.5"
+    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.6"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
    }
   })
   main{fake.check()}
   try{waitFor{offered.get()!=null||messages.any{it!="Checking for updates…"}}}catch(t:Throwable){error("Update callback timed out: calls=$calls messages=$messages finishing=${a.isFinishing} destroyed=${a.isDestroyed} fixtureBytes=${candidate.length()}")}
-  check(offered.get()?.version=="1.0.4"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
+  check(offered.get()?.version=="1.0.5"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
   check(calls.none{it.endsWith("releases/latest")||it.endsWith("v9.9.9")});main{fake.close()}
  }
  private fun await(a:GoActivity,phase:String,test:()->Boolean){try{waitFor(test)}catch(t:Throwable){error("$phase: ${a.link.snapshot()}")}}
+ private fun imageReady(a:GoActivity){
+  val field=GoActivity::class.java.getDeclaredField("imageWork").apply{isAccessible=true}
+  waitFor{main{!field.getBoolean(a)}}
+ }
+ private fun wallpaper(a:GoActivity)=all(a.window.decorView).filterIsInstance<android.widget.ImageView>().first{it.tag=="go-wallpaper"}
+ private fun selectImage(a:GoActivity,result:Int,path:String?=null){
+  val filter=android.content.IntentFilter(Intent.ACTION_OPEN_DOCUMENT).apply{addCategory(Intent.CATEGORY_OPENABLE);addDataType("image/*")}
+  val data=path?.let{Intent().setData(android.net.Uri.parse("content://io.github.denberg28.telerc.go.test.images/$it"))}
+  val monitor=addMonitor(filter,ActivityResult(result,data),true)
+  try{
+   tap(a,"Settings");tap(a,"Background");fit(a);tap(a,"Choose image")
+   waitFor{monitor.hits==1};waitForIdleSync();imageReady(a)
+   main{check(!a.link.snapshot().enabled&&!a.link.snapshot().pending)}
+  }finally{removeMonitor(monitor)}
+ }
+ private fun verifyWallpaper(){
+  ThemeImageStore.remove(targetContext)
+  fun launch()=(startActivitySync(Intent(targetContext,GoActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as GoActivity).also{imageReady(it)}
+  var a=launch()
+  selectImage(a,Activity.RESULT_CANCELED)
+  check(!ThemeImageStore.exists(targetContext)){"Picker cancellation created a wallpaper"}
+  selectImage(a,Activity.RESULT_OK,"photo")
+  check(ThemeImageStore.exists(targetContext)){"Photo was not saved"}
+  val saved=File(targetContext.filesDir,"theme-background.jpg").readBytes()
+  main{
+   val image=(wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap
+   check(image.width==320&&image.height==160){"Imported photo not rendered"}
+   check(kotlin.math.abs(android.graphics.Color.blue(image.getPixel(0,0))-150)<8)
+  }
+  shot("go-wallpaper-custom.png")
+  selectImage(a,Activity.RESULT_CANCELED)
+  selectImage(a,Activity.RESULT_OK,"invalid")
+  check(saved.contentEquals(File(targetContext.filesDir,"theme-background.jpg").readBytes())){"Failed import replaced the wallpaper"}
+  selectImage(a,Activity.RESULT_OK,"oversize")
+  check(saved.contentEquals(File(targetContext.filesDir,"theme-background.jpg").readBytes())){"Oversize import replaced the wallpaper"}
+  // A normal UI rebuild and Activity replacement both retain the imported photo.
+  tap(a,"Settings");tap(a,"Sensitivity");tap(a,"Done")
+  main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width==320);a.finish()}
+  waitForIdleSync();a=launch()
+  main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width==320)}
+  for(scale in listOf("1.0","1.3")){
+   if(scale=="1.3"){
+    android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand("wm size 1280x720")).use{it.readBytes()}
+    android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand("wm density 320")).use{it.readBytes()}
+   }
+   android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand("settings put system font_scale $scale")).use{it.readBytes()}
+   waitFor{if(scale=="1.3")targetContext.resources.configuration.fontScale>=1.25f else targetContext.resources.configuration.fontScale<1.1f}
+   main{a.finish()};waitForIdleSync();a=launch()
+   tap(a,"Settings");fit(a);shot("go-$scale-settings.png")
+   tap(a,"Background");fit(a);shot("go-$scale-background.png");tap(a,"Done")
+  }
+  tap(a,"Settings");tap(a,"Background");tap(a,"Restore default");imageReady(a)
+  check(!ThemeImageStore.exists(targetContext)){"Restore default kept the custom photo"}
+  main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width!=320);a.finish()}
+  waitForIdleSync();a=launch()
+  check(!ThemeImageStore.exists(targetContext))
+  main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width!=320);a.finish()}
+ }
  override fun onStart(){try{
+  if(wallpaperOnly){
+   try{verifyWallpaper()}finally{
+    for(command in listOf("settings put system font_scale 1.0","wm size reset","wm density reset"))android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand(command)).use{it.readBytes()}
+   }
+   finish(Activity.RESULT_OK,Bundle().apply{putString("stream","PASS: gallery image picker, cancel, photo render, corrupt/oversize rollback, rebuild/restart persistence, restore default and fitted normal/large-text wallpaper settings")});return
+  }
   val prefs=targetContext.getSharedPreferences("go",0);prefs.edit().putString("profile","BACKPACK").putString("WIFI.host","10.0.2.2").commit()
   val icon=targetContext.packageManager.getApplicationIcon(targetContext.packageName)
   val bitmap=android.graphics.Bitmap.createBitmap(216,216,android.graphics.Bitmap.Config.ARGB_8888)

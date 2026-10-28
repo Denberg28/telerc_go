@@ -1,10 +1,14 @@
-# TeleRC Go 1.0.3
+# TeleRC Go 1.0.4 — gallery wallpaper
 
 Dedicated repository: [Denberg28/telerc_go](https://github.com/Denberg28/telerc_go).
 One landscape control screen, Wi-Fi connection, optional receiver-side ELRS
 takeover, compact settings and verified manual updates.
 
-- App: `go/` — `io.github.denberg28.telerc.go`, version 1.0.3 / code 4.
+**Settings → Background → Choose image** imports a photo from the Android
+gallery/document picker. **Restore default** returns to the supplied ship image.
+See [wallpaper change and verification](docs/GO_WALLPAPER_104.md).
+
+- App: `go/` — `io.github.denberg28.telerc.go`, version 1.0.4 / code 5.
 - Matching four-wheel firmware: `firmware/go/TeleRC_Go_Rover/`.
 - [Operation](docs/TELERC_GO.md) · [Wiring](docs/GO_WIRING.md) · [Migration record](docs/REPOSITORY_MIGRATION.md).
 - [Existing signed APK and firmware](https://github.com/Denberg28/TeleRC/releases/tag/go-v1.0.3).
