@@ -14,7 +14,7 @@ import kotlin.concurrent.thread
 
 /** Wi-Fi only. A single worker owns the socket, bounded ARM transaction and sends. */
 internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable {
- data class Snapshot(val connected:Boolean,val verified:Boolean,val fresh:Boolean,val armed:Boolean,val enabled:Boolean,val armReady:Boolean,val handset:Boolean,val stopped:Boolean,val receiver:Boolean,val text:String,val rx:Long,val tx:Long,val age:Long,val pending:Boolean)
+ data class Snapshot(val connected:Boolean,val verified:Boolean,val fresh:Boolean,val armed:Boolean,val enabled:Boolean,val armReady:Boolean,val handset:Boolean,val stopped:Boolean,val receiver:Boolean,val text:String,val rx:Long,val tx:Long,val age:Long,val pending:Boolean,val resume:Boolean=false,val driveReady:Boolean=false)
  private val cm=context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
  private val gate=GoControl()
  private val armRequest=GoArmRequest()
@@ -25,6 +25,8 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
  private var connected=false
  private var verified=false
  private var fc=false
+ private var balancing=false
+ private var explicitDisarm=false
  private var ownersSeen=false
  private var capable=false
  private var owner=0
@@ -46,7 +48,7 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
  private fun ownerFresh(n:Long)=ownerAt>0&&n>=ownerAt&&n-ownerAt<750
  private fun switchFresh(n:Long)=switchAt>0&&n>=switchAt&&n-switchAt<750
  private fun mayUsePhone(n:Long)=!radioBlocked && (!fc || switchFresh(n)) && (!ownersSeen || ownerFresh(n)&&owner==1)
- fun snapshot():Snapshot=synchronized(lock){val n=now();Snapshot(connected,verified&&(if(fc)switchFresh(n) else capable&&ownersSeen&&ownerFresh(n)),gate.fresh(n),gate.armed,gate.enabled,gate.armReady(n),radioBlocked||ownersSeen&&owner==2,gate.stopped,receiver,message,rx,tx,gate.heartbeatAt?.let{n-it}?:-1,armRequest.active()||awaitingArmUntil>n)}
+ fun snapshot():Snapshot=synchronized(lock){val n=now();Snapshot(connected,verified&&(if(fc)switchFresh(n) else capable&&ownersSeen&&ownerFresh(n)),gate.fresh(n),gate.armed,gate.enabled,gate.armReady(n),radioBlocked||ownersSeen&&owner==2,gate.stopped,receiver,message,rx,tx,gate.heartbeatAt?.let{n-it}?:-1,armRequest.active()||awaitingArmUntil>n,balancing&&gate.armed&&!gate.enabled,gate.mayDrive(n))}
  fun connect(value:GoEndpoint){require(value.valid());disconnect();synchronized(lock){desired=value;active=true;message="Connecting…"};update()}
  fun foreground(value:Boolean){active=value;if(!value)stop(true)}
  fun axes(s:Int,d:Int)=synchronized(lock){steer=s.coerceIn(1100,1900);drive=d.coerceIn(1100,1900)}
@@ -58,7 +60,12 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
  fun toggleArm()=synchronized(lock){
   val n=now()
   if(radioBlocked||ownersSeen&&owner==2)return@synchronized
-  if(gate.armed||gate.enabled||armRequest.active()||awaitingArmUntil!=0L){revoke("Disarming…",true);return@synchronized}
+  if(balancing&&gate.armed&&!gate.enabled&&active&&connected&&verified&&mayUsePhone(n)){
+   steer=1500;drive=1500
+   if(gate.resumeBalancing(n))message="Resuming · checking neutral"
+   return@synchronized
+  }
+  if(gate.armed||gate.enabled||armRequest.active()||awaitingArmUntil!=0L){explicitDisarm=true;revoke("Disarming…",true);return@synchronized}
   if(!active||!connected||!verified||!gate.fresh(n)||gate.stopped)return@synchronized
   if(fc&&!switchFresh(n)){message="Waiting for radio switch telemetry";return@synchronized}
   if(!fc&&(!ownersSeen||!capable)){message="Update Go rover firmware";return@synchronized}
@@ -69,7 +76,7 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
  }
  fun stop(controlOnly:Boolean=false)=synchronized(lock){
   val controlled=gate.enabled||armRequest.active()||awaitingArmUntil!=0L
-  revoke("Disarmed",controlled||!controlOnly&&gate.armed&&!radioBlocked)
+  revoke(if(balancing&&gate.armed)"Travel paused · local balance active"else"Control stopped",controlled||!controlOnly&&gate.armed&&!radioBlocked)
  }
  fun disconnect(){stop(true);synchronized(lock){desired=null;gate.disconnect();connected=false;verified=false;message="Disconnected"};update()}
  override fun close(){disconnect();closed=true;worker.interrupt()}
@@ -93,26 +100,27 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
     }
     channel.soTimeout=20;network.bindSocket(channel)
     if(desired!==config){channel.close();continue}
-    synchronized(lock){connected=true;verified=false;fc=false;gate.disconnect();armRequest.cancel();awaitingArmUntil=0;ownersSeen=false;capable=false;owner=0;ownerAt=0;switchAt=0;radioBlocked=false;receiver=false;stopPending=false;takeRequested=false;message="Waiting for rover"}
+    synchronized(lock){connected=true;verified=false;fc=false;balancing=false;explicitDisarm=false;gate.disconnect();armRequest.cancel();awaitingArmUntil=0;ownersSeen=false;capable=false;owner=0;ownerAt=0;switchAt=0;radioBlocked=false;receiver=false;stopPending=false;takeRequested=false;message="Waiting for rover"}
     var discover=0L;var sent=0L;var uiAt=0L;var networkAt=0L;var gcsAt=0L;var boot:Long?=null;var kind:Int?=null;var requestedRc=false;var lastFcBoot:Long?=null
     val opened=now()
     fun send(bytes:ByteArray){channel.send(DatagramPacket(bytes,bytes.size,remote,config.port));tx++}
     fun stopFrames(){
      val n=now()
-     if(!peerVerified||!mayUsePhone(n))return
+     if(!peerVerified||!mayUsePhone(n)){explicitDisarm=false;return}
      repeat(3){
       send(GoProtocol.rc(sequence++,config.system,1500,1500))
-      if(fc)send(GoProtocol.hold(sequence++,config.system))
-      send(Mavlink.armDisarm(sequence++,config.system,1,false))
+      if(fc&&explicitDisarm)send(GoProtocol.hold(sequence++,config.system))
+      if(GoStopPolicy.disarm(balancing,explicitDisarm,fc))send(Mavlink.armDisarm(sequence++,config.system,1,false))
       if(!fc)send(GoProtocol.rc(sequence++,config.system,0,0))
      }
+     explicitDisarm=false
     }
     val input=ByteArray(8193)
     while(!closed&&desired===config&&active){
      val n=now()
      if(n-networkAt>=500){networkAt=n;if(network !in cm.allNetworks||wifi()!=network)throw java.net.SocketException("Wi-Fi changed")}
      synchronized(lock){
-      if(gate.expire(n)){stopPending=true;revoke("Telemetry lost · disarmed",true)}
+      if(gate.expire(n)){stopPending=true;revoke("Telemetry lost · control paused",true)}
       if((gate.enabled||armRequest.active())&&((ownersSeen&&!ownerFresh(n))||(fc&&!switchFresh(n))||radioBlocked)){
        revoke(if(radioBlocked)"Transmitter control"else"Control telemetry lost",false);stopPending=false
       }
@@ -124,11 +132,11 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
       if(takeRequested&&armRequest.valid(gate.epoch,n)&&!radioBlocked){send(GoElrs.take(sequence++,config.system));takeRequested=false}
       if(fc&&gate.enabled&&gate.fresh(n)&&n-gcsAt>=1000){send(GoProtocol.heartbeat(sequence++));gcsAt=n}
       if(gate.enabled&&gate.fresh(n)&&mayUsePhone(n)&&n-sent>=50){
-       val s=if(gate.armed)steer else 1500;val d=if(gate.armed)drive else 1500
+       val s=if(gate.mayDrive(n))steer else 1500;val d=if(gate.mayDrive(n))drive else 1500
        send(GoProtocol.rc(sequence++,config.system,s,d));gate.sent(s,d,n);sent=n
       }
       if(armRequest.valid(gate.epoch,n)&&mayUsePhone(n)&&gate.armReady(n)){
-       send(Mavlink.armDisarm(sequence++,config.system,1,true));armRequest.cancel();awaitingArmUntil=n+1000;message="Confirming ARM…"
+       send(Mavlink.armDisarm(sequence++,config.system,1,true));armRequest.cancel();awaitingArmUntil=n+3000;message="Confirming ARM…"
       }
       if(!peerVerified&&fallback&&n-opened>3000)message="No rover reply · close other controller"
      }
@@ -157,10 +165,10 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
          else if(!gate.enabled&&!armRequest.active())message=when{radioBlocked||ownersSeen&&owner==2->"Transmitter control";gate.stopped->"Select MANUAL";hb.armed->"Armed elsewhere";!fc&&!capable->if(now()-opened>1500)"Update Go rover firmware"else"Checking rover firmware";else->"Connected · tap ARM"}
         }
         if(peerVerified&&!fc)GoElrs.status(frame,config.system)?.let{s->
-         ownersSeen=true;capable=s.capable;owner=s.owner;ownerAt=now();receiver=s.receiver;radioBlocked=s.takeover||s.owner==2
+         ownersSeen=true;capable=s.capable;balancing=s.balancing;owner=s.owner;ownerAt=now();receiver=s.receiver;radioBlocked=s.takeover||s.owner==2
          gate.receiverStop(s.stopped)
          if(!capable){revoke("Update Go rover firmware",false);stopPending=false}
-         else if(radioBlocked||s.stopped){revoke(if(s.stopped)"Radio STOP active"else"Transmitter control",false);stopPending=false}
+         else if(radioBlocked||s.stopped){revoke(if(s.stopped)"Rover stop/fault active"else"Transmitter control",false);stopPending=false}
          else if(armRequest.valid(gate.epoch,now())&&owner==1){gate.enable(now())}
          else if(gate.enabled&&owner!=1){revoke("Phone authority released",false);stopPending=false}
         }
@@ -170,7 +178,9 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
          lastFcBoot=s.bootMs;switchAt=now();radioBlocked=!s.phoneAllowed
          if(radioBlocked){revoke("Transmitter control",false);stopPending=false}
         }
-        Mavlink.commandAck(frame)?.takeIf{it.system==config.system&&it.command==400&&it.result!=0}?.let{revoke("ARM ${it.resultText}",true)}
+        Mavlink.commandAck(frame)?.takeIf{it.system==config.system&&it.command==400}?.let{
+         if(!GoStopPolicy.armReplyPending(it.result))revoke("ARM ${it.resultText}",true)
+        }
        }
       }
      }catch(_:SocketTimeoutException){}

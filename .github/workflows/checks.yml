@@ -22,16 +22,60 @@ jobs:
           python3 bridge/sync_motor_core.py --check
           bridge/tests/run.sh
           SANITIZE=1 bridge/tests/run.sh
-          firmware/go/tests/run.sh
-          SANITIZE=1 firmware/go/tests/run.sh
       - name: Android regression and Go build
-        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleDebugAndroidTest --no-daemon
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleRelease :go:assembleDebugAndroidTest --no-daemon
+      - name: Package independent preview APK
+        run: |
+          ./gradlew :go:assembleDebug -PcandidateInstall=true --no-daemon
+          cp go/build/outputs/apk/debug/go-debug.apk go/build/TeleRC-Go-v1.0.5-Candidate.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify go/build/TeleRC-Go-v1.0.5-Candidate.apk
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 go/build/TeleRC-Go-v1.0.5-Candidate.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging go/build/TeleRC-Go-v1.0.5-Candidate.apk | grep "name='io.github.denberg28.telerc.go.candidate' versionCode='1001' versionName='1.0.5'"
+          unzip -tq go/build/TeleRC-Go-v1.0.5-Candidate.apk
+          printf 'Source: %s\nBuild: %s/%s/actions/runs/%s\nIndependent debug-signed Candidate package; production release APK remains unsigned without the retained signing environment.\n' "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > go/build/WALLPAPER_BUILD_INFO.txt
+          sha256sum go/build/TeleRC-Go-v1.0.5-Candidate.apk go/build/outputs/apk/release/*.apk > go/build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: TeleRC-Go-checks
           path: |
             go/build/outputs/apk/debug/
+            go/build/outputs/apk/release/
+            go/build/TeleRC-Go-v1.0.5-Candidate.apk
+            go/build/WALLPAPER_BUILD_INFO.txt
+            go/build/SHA256SUMS.txt
             go/build/reports/
             go/build/test-results/
             app/build/reports/
+  wallpaper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: gradle/actions/setup-gradle@v4
+      - run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"'
+      - run: ./gradlew :go:assembleDebug :go:assembleDebugAndroidTest --no-daemon
+      - name: Enable emulator KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Native gallery and wallpaper regression
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: default
+          arch: x86_64
+          profile: pixel_2
+          ram-size: 3072M
+          cores: 2
+          disable-animations: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/check-go-wallpaper-ui.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TeleRC-Go-wallpaper-evidence
+          path: go/build/wallpaper-evidence/

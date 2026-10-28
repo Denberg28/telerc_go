@@ -1,3 +1,12 @@
+# Go gallery wallpaper 1.0.5
+
+See [final A–F evidence and acceptance](GO_WALLPAPER_105.md). Cloud run
+40753202767 passes both jobs: 23 Go JVM tests, builds/lint, shared/bridge/default
+sanitizers, native gallery/persistence/rollback/restore and short large-text UI.
+Verified source c58e30e60c7a8d9819e3abaf0c25a1dacf2b9338; independent Candidate
+APK packaged and checksummed. Actual phone/HIL and retained-signer production
+upgrade remain pending. Firmware is unchanged.
+
 # Final 0.8.88 A–F result
 
 Published prerelease: https://github.com/Denberg28/TeleRC/releases/tag/v0.8.88

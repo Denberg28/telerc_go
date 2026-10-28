@@ -17,3 +17,5 @@ MazeEnvironmentRenderer
 MazeVehicleRenderer
 RoverKinematics
 PopupLayout
+ThemeImageStore
+ThemeImagePolicy

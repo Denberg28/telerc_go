@@ -1,3 +1,14 @@
+# Go wallpaper verification
+
+1.0.5 software verification PASS: both cloud jobs in run 40753202767. The
+[final evidence and preview checksum](GO_WALLPAPER_105.md) record 23 Go tests,
+Android builds/lint, default host sanitizers, native wallpaper tests and visual QA.
+The independent Candidate APK is debug-signed; production signing and actual
+phone/gallery-provider/HIL acceptance remain pending. The local SDK/network and
+/proc restrictions are resolved for software verification by the cloud runner.
+The baseline removed firmware/go, so its stale test calls were removed from CI;
+firmware is not rebuilt or qualified by this app-only change.
+
 # UI and safety review — 0.8.88
 
 Balance is dropdown-only. Shared actions and compact bounded popup layouts are standardized. Session-bound Balance consent, stricter compatible MAVLink parsing and single-flight APK verification address confirmed review findings. App-only; retain balancer0.3.0. [Review, remaining gaps, gates and acceptance](UI_SAFETY_REVIEW_088.md). Final CI/build result supplies qualification; physical HIL remains BLOCKED.
