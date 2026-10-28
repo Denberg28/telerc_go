@@ -1,9 +1,17 @@
-# TeleRC Go 1.0.4 — custom gallery wallpaper
+# TeleRC Go 1.0.5 — custom gallery wallpaper
 
 Baseline: `Denberg28/telerc_go` main commit
 `409c5154c9a588e35c71c1f9a726c2f2779c05ee`, Go 1.0.3/code 4.
-Candidate: 1.0.4/code 5, same `io.github.denberg28.telerc.go` application ID.
-No firmware, protocol, connection, authority, joystick mapping or updater-feed change.
+Candidate: 1.0.5/code 1001, same `io.github.denberg28.telerc.go` application ID.
+Released baseline: ecosystem v1.0.0 contains Android 1.0.4/code 1000;
+product source `36323abbebfa0d02b069b4f23cb502607f65e7c0`, retained-signer
+publication source `b6b0138191ac3d29e1702982e6006796142718ff`. Main is behind
+that published product. The already released GoControl/GoElrs/GoLink/GoStopPolicy
+and their tests are carried forward byte for byte, including explicit balancer
+resume/neutral qualification and torque-preserving pause. The two corresponding
+GoActivity status/drive-ready checks are retained. Version code 1001 upgrades
+code 1000; fixture code 1002 is test-only. Production package and external signing
+identity remain. No new firmware, protocol or updater-feed change is introduced.
 
 ## Use and acceptance
 
@@ -36,7 +44,7 @@ while loading/importing. The bundled photo and transparent controls are retained
 | C — regression | Host PASS; cloud pending | Normal bridge host suite PASS. Local LeakSanitizer blocked by denied /proc task inspection; default sanitizers remain required in CI. |
 | D — integration | Cloud pending | Native wallpaper rendering, restart/rebuild persistence, restore-default persistence, normal/1.3 text on short landscape sheets. |
 | E — phone/HIL | BLOCKED — not hardware tested | No attached phone/rover. Actual gallery providers, upgrade/signing, interruption and restrained-wheel no-auto-rearm checks remain. |
-| F — delivery | Review source pending | Candidate code 5; retained signer is external. No release/stable promotion or installable retained-signer APK claimed. |
+| F — delivery | Review source pending | Candidate code 1001; retained signer is external. No release/stable promotion or installable retained-signer APK claimed. |
 
 The baseline independently deleted `firmware/go` (including its tests). CI no
 longer invokes those nonexistent paths; bridge checks and all Android tests stay
@@ -44,7 +52,7 @@ required. This app-only change does not restore or qualify deleted firmware.
 
 ## Phone acceptance, installation and rollback
 
-1. On an actual phone, install a retained-signer 1.0.4 APK over 1.0.3 and verify
+1. On an actual phone, install a retained-signer 1.0.5 APK over 1.0.4 and verify
    connection preferences and sensitivity remain. A CI debug APK has a different
    signer and cannot serve as that upgrade.
 2. Choose a landscape image, portrait EXIF photo, local gallery photo and any
@@ -56,12 +64,12 @@ required. This app-only change does not restore or qualify deleted firmware.
    short landscape display and at 1.3 text size; all actions must remain visible.
 5. With raised wheels and a reachable independent power cutoff, begin arming or
    low-speed phone drive, then open Settings/Background/the picker. Confirm the
-   existing stop/disarm behavior, centered axes and cancelled pending ARM. Return,
+   existing profile-specific stop/pause behavior, centered axes and cancelled pending ARM. Return,
    cancel, import, background or recreate the Activity; nothing may auto-rearm.
    Verify receiver-selected operation remains passive as before.
 
 No rover firmware reflash is needed. Restore default rolls back wallpaper only.
-For an app rollback retain the signed 1.0.3 APK; Android downgrade may require
+For an app rollback retain the signed 1.0.4 APK; Android downgrade may require
 uninstall/data loss. Do not erase receiver or motor configuration.
 
 Next check: inspect both final CI jobs, visually inspect their screenshots and

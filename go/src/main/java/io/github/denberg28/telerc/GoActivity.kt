@@ -137,9 +137,9 @@ class GoActivity:Activity(){
  private fun refresh(){
   if(!::link.isInitialized)return
   val s=link.snapshot();status?.text=s.text
-  arm?.text=when{s.handset->"Radio control";s.pending->"Cancel arming";s.armed->"DISARM";else->"ARM"}
+  arm?.text=when{s.handset->"Radio control";s.pending->"Cancel arming";s.resume->"Resume control";s.armed->"DISARM";else->"ARM"}
   arm?.isEnabled=!imageWork&&!s.handset&&(s.pending||s.fresh&&s.verified&&!s.stopped)
-  val canDrive=!imageWork&&s.fresh&&s.enabled&&s.armed&&!s.handset
+  val canDrive=!imageWork&&s.fresh&&s.enabled&&s.armed&&s.driveReady&&!s.handset
   if(left?.isEnabled!=canDrive)left?.isEnabled=canDrive
   if(right?.isEnabled!=canDrive)right?.isEnabled=canDrive
   connect?.text=if(s.connected)"Disconnect" else "Phone connect"

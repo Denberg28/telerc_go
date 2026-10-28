@@ -1,8 +1,8 @@
-# TeleRC Go 1.0.4
+# TeleRC Go 1.0.5
 
 Wi-Fi-only rover controller. One landscape control screen: **Phone connect**,
 **Settings**, and one **ARM / DISARM** button. No Phone control button, STOP,
-Use ELRS, setup/test tabs or transport dropdown. The upper-left **TeleRC Go v1.0.4** text checks for stable Go updates when tapped.
+Use ELRS, setup/test tabs or transport dropdown. The upper-left **TeleRC Go v1.0.5** text checks for stable Go updates when tapped.
 Status and ARM/DISARM sit at the lower center. Content-sized popups use equal
 spacing, a two-column connection form and separate footer actions, with no scroll
 containers. Settings contains Wi-Fi settings, Connection details, Sensitivity, Background and
@@ -16,7 +16,7 @@ photo is needed. Opening settings or the picker stops phone control and cancels
 pending ARM; returning never resumes driving automatically.
 
 The transparent joystick panels and inset navy power icon remain.
-[1.0.4 verification and installation status](GO_WALLPAPER_104.md).
+[1.0.5 verification and installation status](GO_WALLPAPER_105.md).
 
 ## Connect and drive
 

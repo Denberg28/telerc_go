@@ -1,6 +1,6 @@
-# Go gallery wallpaper 1.0.4
+# Go gallery wallpaper 1.0.5
 
-See [current A–F evidence and acceptance](GO_WALLPAPER_104.md). This app-only
+See [current A–F evidence and acceptance](GO_WALLPAPER_105.md). This app-only
 change reuses the full TeleRC bounded, atomic photo importer. Firmware is unchanged.
 
 # Final 0.8.88 A–F result

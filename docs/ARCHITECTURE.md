@@ -4,7 +4,7 @@ GoActivity imports images through ACTION_OPEN_DOCUMENT into the shared
 ThemeImageStore/ThemeImagePolicy. One serialized executor orders load/import/remove
 across Activity replacement. A cached bitmap updates the existing background view;
 control/layout/transport objects are not recreated for import. The compact
-Background sheet restores the bundled fallback. See [scope](GO_WALLPAPER_104.md).
+Background sheet restores the bundled fallback. See [scope](GO_WALLPAPER_105.md).
 
 # UI and safety review — 0.8.88
 
