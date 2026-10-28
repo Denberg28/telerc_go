@@ -13,7 +13,10 @@ android {
   }
  } }
  buildTypes {
-  getByName("release") { signingConfig=signingConfigs.getByName("releaseKey") }
+  getByName("release") {
+   // Credential-free review builds stay unsigned; configured releases retain the existing key.
+   if (!System.getenv("TELERC_KEYSTORE_FILE").isNullOrBlank()) signingConfig=signingConfigs.getByName("releaseKey")
+  }
   getByName("debug") {
    if (providers.gradleProperty("candidateInstall").orNull == "true") {
     applicationIdSuffix = ".candidate"

@@ -24,12 +24,22 @@ jobs:
           SANITIZE=1 bridge/tests/run.sh
       - name: Android regression and Go build
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleRelease :go:assembleDebugAndroidTest --no-daemon
+      - name: Package independent preview APK
+        run: |
+          ./gradlew :go:assembleDebug -PcandidateInstall=true --no-daemon
+          cp go/build/outputs/apk/debug/go-debug.apk go/build/TeleRC-Go-v1.0.5-Candidate.apk
+          printf 'Source: %s\nBuild: %s/%s/actions/runs/%s\nIndependent debug-signed Candidate package; production release APK remains unsigned without the retained signing environment.\n' "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > go/build/WALLPAPER_BUILD_INFO.txt
+          sha256sum go/build/TeleRC-Go-v1.0.5-Candidate.apk go/build/outputs/apk/release/*.apk > go/build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: TeleRC-Go-checks
           path: |
             go/build/outputs/apk/debug/
+            go/build/outputs/apk/release/
+            go/build/TeleRC-Go-v1.0.5-Candidate.apk
+            go/build/WALLPAPER_BUILD_INFO.txt
+            go/build/SHA256SUMS.txt
             go/build/reports/
             go/build/test-results/
             app/build/reports/
