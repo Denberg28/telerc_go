@@ -1,8 +1,15 @@
+# Published Go1.0.7
+
+[Final signed release result](RELEASE_RESULT_GO_107.md): 219 JVM tests,
+maze/gallery/native layout/persistence checks, default sanitizers, retained
+signing and all 11 public assets PASS. Phone/HIL remains pending. This result
+supersedes pending software/package statuses retained below.
+
 # Go 1.0.7 — latest TeleRC maze Test
 
 Baseline: published Go1.0.6 product `d66e4751b050caae7c9b53ef4e9235b153f78aa7`,
 main `ad8fddb0e011c84ba7c56500fc6ac2540b8a75cf`.
-Target: Go1.0.7/code1003, same production package and signer; app-only.
+Target: Go1.0.7/code 1003, same production package and signer; app-only.
 
 The owner supplied a screenshot of TeleRC's maze Test. Go1.0.6 had incorrectly
 adapted the older arcade road game from TeleRC main. This update replaces it
@@ -40,14 +47,14 @@ prior signed APK and avoid uninstalling to update.
 | Gate | Status before final cloud run | Evidence / required check |
 | --- | --- | --- |
 | A build | PASS local build/lint | Both-app regression and Go debug/release lint/build/native test compilation passed locally. Final cloud checks remain required. |
-| B behavior | Local57 Go +162 full-app JVM tests PASS | Reuse released maze physics/economy/replay regressions. |
+| B behavior | Local57 Go + 162 full-app JVM tests PASS | Reuse released maze physics/economy/replay regressions. |
 | C regression | Shared sync PASS; host PASS | Default cloud sanitizers and18 source/package tests remain required. |
-| D integration | NOT TESTED | Native screenshot-like level12/14-coin fixture at1.0/1.3 text: actual joystick input, pause, Market buy/remove/equip, real-frame clear/record/unlock, Levels, three-bump restart, lifecycle, persistence, no live transmissions. |
+| D integration | NOT TESTED | Native screenshot-like level 12/14-coin fixture at 1.0/1.3 text: actual joystick input, pause, Market buy/remove/equip, real-frame clear/record/unlock, Levels, three-bump restart, lifecycle, persistence, no live transmissions. |
 | E phone/HIL | BLOCKED | Actual phone installation/settings and restrained-wheel isolation pending. |
-| F delivery | NOT TESTED | Same signer as1.0.6, increased code1003, exact source/tag, class inventory, permissions, alignment/ZIP, hashes and public assets. |
+| F delivery | NOT TESTED | Same signer as1.0.6, increased code 1003, exact source/tag, class inventory, permissions, alignment/ZIP, hashes and public assets. |
 
 Native fixtures seed emulator preferences only; real users start at their saved
-Go maze level or level1. The screenshot's level12 is not a forced starting level.
+Go maze level or level 1. The screenshot's level 12 is not a forced starting level.
 
 Phone check: update the production app in place; confirm wallpaper/connection and
 sensitivity. With wheels raised and independent cutoff, open Test during pending

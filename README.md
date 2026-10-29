@@ -1,8 +1,20 @@
-# TeleRC Go1.0.7 — latest maze Test
+# TeleRC Go 1.0.7 — latest maze Test
 
-Replaces the older arcade game with the maze Test from released TeleRC v1.1.0rc1:
-20 levels, worlds, coins, Market cosmetics, clear times and saved progress.
-[Scope, qualification and acceptance](docs/GO_MAZE_107.md).
+**Test** now opens the maze from released TeleRC v1.1.0rc1, matching the supplied
+screenshot: 20 levels, worlds, coins, Market cosmetics, clear times and saved Go
+progress. The older road game is replaced. Test stays before Phone connect;
+Controls is available in the Test menu and through Android Back.
+
+[Download signed APK](https://github.com/Denberg28/telerc_go/releases/download/go-v1.0.7/TeleRC-Go-v1.0.7.apk) ·
+[GitHub prerelease](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.7) ·
+[Final result and installation](docs/RELEASE_RESULT_GO_107.md).
+
+Build/lint, 57 Go + 162 full-app tests, 18 packaging checks, default sanitizers,
+native maze/gallery workflows and all 11 hosted files pass. Same signer/code 1003
+supports an in-place upgrade; no firmware reflash. Actual phone/HIL remains
+pending. Different TeleRC/Go installations keep separate saves.
+
+Historical release notes below are retained for provenance.
 
 # TeleRC Go 1.0.6 — Test game and aligned controls
 

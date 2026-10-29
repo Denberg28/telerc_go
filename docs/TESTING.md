@@ -1,3 +1,10 @@
+# Published Go1.0.7 maze Test
+
+A/B/C/D/F software/delivery PASS; E actual phone/HIL remains BLOCKED.
+[Final signed release and producer evidence](RELEASE_RESULT_GO_107.md)
+supersedes pending statuses below. 219 JVM tests and native screenshot-like maze
+workflows passed; published APK is the maze implementation.
+
 # Go1.0.7 — maze Test
 
 Current scope, A–F gates and restrained-wheel acceptance: [GO_MAZE_107.md](GO_MAZE_107.md).
