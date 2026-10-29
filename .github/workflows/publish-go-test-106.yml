@@ -1,0 +1,96 @@
+name: Publish verified TeleRC Go 1.0.6 prerelease
+on:
+  push:
+    branches: [release/publish-go-v1.0.6]
+    paths:
+      - .github/workflows/publish-go-test-106.yml
+      - scripts/stage_go_test_106.py
+permissions:
+  contents: read
+concurrency:
+  group: go-publish-v1.0.6
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GO_SOURCE: d66e4751b050caae7c9b53ef4e9235b153f78aa7
+      TAG: go-v1.0.6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Fetch pinned signing and software producers
+        run: |
+          mkdir meta
+          gh api repos/Denberg28/TeleRC/actions/runs/40855768830 > meta/signed-run.json
+          gh api repos/Denberg28/TeleRC/actions/runs/40855768830/jobs > meta/signed-jobs.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40855741152 > meta/checks-run.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40855741152/jobs > meta/checks-jobs.json
+          gh api repos/Denberg28/TeleRC/actions/runs/40855768830/artifacts > meta/signed-artifacts.json
+          gh api repos/Denberg28/telerc_go/actions/runs/40855741152/artifacts > meta/artifacts.json
+          python3 - <<'PY'
+          import json,subprocess
+          from pathlib import Path
+          for role,repo,index,name in [
+              ('signed','Denberg28/TeleRC','signed-artifacts','TeleRC-Go-v1.0.6-retained-signer'),
+              ('checks','Denberg28/telerc_go','artifacts','TeleRC-Go-checks'),
+              ('native','Denberg28/telerc_go','artifacts','TeleRC-Go-wallpaper-evidence')]:
+              found=[x for x in json.load(open('meta/'+index+'.json'))['artifacts'] if x['name']==name]
+              assert len(found)==1
+              item=found[0]
+              Path('meta/'+role+'-artifact.json').write_text(json.dumps(item))
+              with open(role+'.zip','wb') as stream:
+                  subprocess.run(['gh','api',f'repos/{repo}/actions/artifacts/{item["id"]}/zip'],stdout=stream,check=True)
+          PY
+      - name: Verify producers, signed identity, tests, native game and source
+        run: python3 scripts/stage_go_test_106.py signed.zip checks.zip native.zip meta publication
+      - name: Create complete draft without replacing any existing release
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > releases.json
+          python3 - <<'PY'
+          import json,os
+          assert not any(r['tag_name']==os.environ['TAG'] for r in json.load(open('releases.json'))),'Release exists; refusing replacement'
+          PY
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then echo 'Tag exists; refusing retarget'; exit 1; fi
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GO_SOURCE" --draft --prerelease --latest=false --title 'TeleRC Go 1.0.6 — Test game and aligned controls' --notes-file publication/RELEASE_NOTES.md publication/*
+      - name: Verify all hosted draft bytes and publish by release ID
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > releases.json
+          python3 - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          repo=os.environ['GITHUB_REPOSITORY'];tag=os.environ['TAG'];source=os.environ['GO_SOURCE']
+          matches=[r for r in json.load(open('releases.json')) if r['tag_name']==tag]
+          assert len(matches)==1
+          release=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/releases/{matches[0]["id"]}']))
+          assert release['draft'] is True and release['prerelease'] is True and release['target_commitish']==source
+          expected={p.name:p for p in Path('publication').iterdir() if p.is_file()}
+          assets={a['name']:a for a in release['assets']}
+          assert set(assets)==set(expected)
+          for name,path in expected.items():
+              data=subprocess.check_output(['gh','api',f'repos/{repo}/releases/assets/{assets[name]["id"]}','-H','Accept: application/octet-stream'])
+              digest=hashlib.sha256(path.read_bytes()).hexdigest()
+              assert hashlib.sha256(data).hexdigest()==digest
+              assert assets[name]['digest']=='sha256:'+digest and assets[name]['size']==path.stat().st_size
+          endpoint=f'repos/{repo}/releases/{release["id"]}'
+          published=json.loads(subprocess.check_output(['gh','api','-X','PATCH',endpoint,'-F','draft=false','-F','prerelease=true','-f','make_latest=false']))
+          assert published['draft'] is False and published['prerelease'] is True
+          final=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/releases/tags/{tag}']))
+          ref=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/git/ref/tags/{tag}']))
+          assert ref['object']['sha']==source
+          assert {a['name']:a['digest'] for a in final['assets']}=={a['name']:a['digest'] for a in release['assets']}
+          print('PASS: all hosted asset bytes/digests and exact-source prerelease:',final['html_url'])
+          Path('publication/PUBLISHED_RESULT.json').write_text(json.dumps(final,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TeleRC-Go-v1.0.6-publication
+          path: publication/
+          if-no-files-found: error
