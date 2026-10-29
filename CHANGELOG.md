@@ -1,3 +1,11 @@
+## Go1.0.7 — 29 October 2026
+
+- Replace old arcade Test with released TeleRC maze practice matching the owner screenshot.
+- Restore20 levels/worlds, Market/coins/cosmetics, clear times, replay rewards and saved progress.
+- Match full-screen layout and symmetric joystick captions; retain Test entry before Phone connect.
+- Pause/neutralize on dialogs/lifecycle and keep practice disconnected from live control.
+- Add native maze workflow/persistence fixtures and released model regressions.
+
 ## Go 1.0.6 — 29 October 2026
 
 - Add Test before Phone connect for offline arcade Game/Test-drive, Reset and music.

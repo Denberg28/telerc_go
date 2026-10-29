@@ -42,7 +42,7 @@ class GoInstrumentation:Instrumentation(){
  private fun currentRoot(a:GoActivity):View {
   val field=GoActivity::class.java.getDeclaredField("showing");field.isAccessible=true
   val d=field.get(a) as? android.app.Dialog
-  return d?.window?.decorView?:a.window.decorView
+  return d?.window?.decorView?:a.practicePopup?.window?.decorView?:a.window.decorView
  }
  private fun tap(a:GoActivity,label:String){waitFor{main{find(currentRoot(a),label)?.isEnabled==true}};main{check(find(currentRoot(a),label)!!.performClick())}}
  private fun all(v:View):List<View> = listOf(v)+if(v is ViewGroup)(0 until v.childCount).flatMap{all(v.getChildAt(it))}else emptyList()
@@ -71,8 +71,8 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyUpdater(a:GoActivity){
   val candidate=File(targetContext.filesDir,"update-candidate.apk");check(candidate.isFile)
   val digest=GoApkVerifier.hash(candidate)
-  check(GoApkVerifier.verify(a,candidate,digest,"1.0.7")){"Newer same-package/signer APK rejected"}
-  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.7")){"Wrong hash accepted"}
+  check(GoApkVerifier.verify(a,candidate,digest,"1.0.8")){"Newer same-package/signer APK rejected"}
+  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.8")){"Wrong hash accepted"}
   check(!GoApkVerifier.verify(a,candidate,digest,"9.9.9")){"Wrong version accepted"}
   val current=File(a.applicationInfo.sourceDir);check(!GoApkVerifier.verify(a,current,GoApkVerifier.hash(current))){"Same-code APK accepted"}
   val other=File(targetContext.filesDir,"update-wrong-package.apk");check(!GoApkVerifier.verify(a,other,GoApkVerifier.hash(other))){"Full TeleRC APK accepted"}
@@ -81,15 +81,15 @@ class GoInstrumentation:Instrumentation(){
   val messages=java.util.Collections.synchronizedList(mutableListOf<String>())
   val fake=GoUpdater(a,{messages.add(it)},{value,_->offered.set(value)},{url->
    calls.add(url)
-   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.7"},{"ref":"refs/tags/go-v1.0.8"}]"""
+   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.8"},{"ref":"refs/tags/go-v1.0.9"}]"""
    else {
-    val v=if(url.endsWith("1.0.8"))"1.0.8" else "1.0.7"
-    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.8"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
+    val v=if(url.endsWith("1.0.9"))"1.0.9" else "1.0.8"
+    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.9"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
    }
   })
   main{fake.check()}
   try{waitFor{offered.get()!=null||messages.any{it!="Checking for updates…"}}}catch(t:Throwable){error("Update callback timed out: calls=$calls messages=$messages finishing=${a.isFinishing} destroyed=${a.isDestroyed} fixtureBytes=${candidate.length()}")}
-  check(offered.get()?.version=="1.0.7"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
+  check(offered.get()?.version=="1.0.8"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
   check(calls.none{it.endsWith("releases/latest")||it.endsWith("v9.9.9")});main{fake.close()}
  }
  private fun await(a:GoActivity,phase:String,test:()->Boolean){try{waitFor(test)}catch(t:Throwable){error("$phase: ${a.link.snapshot()}")}}
@@ -155,53 +155,101 @@ class GoInstrumentation:Instrumentation(){
   main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width!=320);a.finish()}
  }
  private fun verifyTestGame(){
+  fun launch()=(startActivitySync(Intent(targetContext,GoActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as GoActivity).also{imageReady(it);waitForIdleSync()}
+  val saves=targetContext.getSharedPreferences("maze_practice",0)
   for(scale in listOf("1.0","1.3")){
    for(command in listOf("wm size 1280x720","wm density 320","settings put system font_scale $scale"))
     android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand(command)).use{it.readBytes()}
    Thread.sleep(1500)
-   val a=startActivitySync(Intent(targetContext,GoActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as GoActivity
-   imageReady(a);waitForIdleSync()
-   fun rect(v:View)=android.graphics.Rect().also{check(v.getGlobalVisibleRect(it)&&it.width()>=v.width-1&&it.height()>=v.height-1)}
+   var wallet=MazeWallet.decode("")
+   for(i in 0..7)wallet=wallet.claim(1,i)!!
+   for(i in 0..5)wallet=wallet.claim(2,i)!!
+   saves.edit().clear().putInt("level",12).putInt("completed_level",11).putString("wallet",wallet.encode()).commit()
+   var a=launch()
+   fun maze()=all(a.window.decorView).filterIsInstance<MazePracticeView>().single()
    fun symmetry(){
-    val all=all(a.window.decorView)
-    val labels=listOf("go-steer-label","go-drive-label").map{tag->all.first{it.tag==tag}}
-    val sticks=all.filterIsInstance<JoystickView>()
-    check(sticks.size==2)
-    val l=rect(labels[0]);val r=rect(labels[1]);val ls=rect(sticks[0]);val rs=rect(sticks[1])
-    check(l.top==r.top&&l.height()==r.height()&&ls.top==rs.top&&ls.height()==rs.height()){"Asymmetric captions/sticks"}
+    fun rect(v:View)=android.graphics.Rect().also{check(v.getGlobalVisibleRect(it)&&it.width()>=v.width-1&&it.height()>=v.height-1)}
+    val views=all(a.window.decorView)
+    val l=rect(views.first{it.tag=="go-steer-label"});val r=rect(views.first{it.tag=="go-drive-label"})
+    val sticks=views.filterIsInstance<JoystickView>();check(sticks.size==2)
+    val ls=rect(sticks[0]);val rs=rect(sticks[1])
+    check(l.top==r.top&&l.height()==r.height()&&ls.top==rs.top&&ls.height()==rs.height()){"Asymmetric maze captions/sticks"}
     check(kotlin.math.abs(l.centerX()-ls.centerX())<=1&&kotlin.math.abs(r.centerX()-rs.centerX())<=1)
-    val pageButton=all.first{it.tag=="go-test"} as android.widget.TextView
-    check(pageButton.lineCount==1){"Test/Controls action must stay on one line"}
-    val test=rect(pageButton);val phone=rect(find(a.window.decorView,if(sticks[0].isEnabled)"Offline" else "Phone connect")!!)
-    check(test.right<phone.left){"Test must precede Phone connect"}
    }
-   main{symmetry();check(!a.link.snapshot().enabled)}
-   shot("go-test-$scale-controls.png")
-   // Start a real socket attempt, then enter Test and verify it cannot reconnect.
-   main{a.link.connect(GoEndpoint(GoProfile.WIFI,"10.0.2.2",14550,0,1))}
-   tap(a,"Test");Thread.sleep(300)
    main{
-    symmetry();check(!a.link.snapshot().connected&&!a.link.snapshot().enabled&&!a.link.snapshot().pending)
-    check(find(a.window.decorView,"Offline")?.isEnabled==false)
-    val sticks=all(a.window.decorView).filterIsInstance<JoystickView>();check(sticks.all{it.isEnabled})
-    val game=all(a.window.decorView).filterIsInstance<TestDriveView>().single();check(game.mode==TestDriveView.Mode.GAME)
-    game.setSteering(1800);game.setDrive(1800)
+    val page=all(a.window.decorView).first{it.tag=="go-test"}
+    val phone=find(a.window.decorView,"Phone connect")!!
+    val pr=android.graphics.Rect();val cr=android.graphics.Rect();page.getGlobalVisibleRect(pr);phone.getGlobalVisibleRect(cr)
+    check(pr.right<cr.left)
+    a.link.connect(GoEndpoint(GoProfile.WIFI,"10.0.2.2",14550,0,1))
    }
-   Thread.sleep(300);main{check(!a.link.snapshot().connected&&!a.link.snapshot().pending)}
+   tap(a,"Test");Thread.sleep(300);waitForIdleSync()
+   main{
+    symmetry();check(maze().practice.maze.level==12)
+    check(maze().practice.state==MazePractice.State.READY)
+    check(!a.link.snapshot().connected&&!a.link.snapshot().enabled&&!a.link.snapshot().pending)
+    check(all(a.window.decorView).filterIsInstance<JoystickView>().none{it.isEnabled})
+    for(label in listOf("Test ▾","Start practice","Market · 14","Levels","Restart level","Clear times"))visible(a,label)
+    check(find(a.window.decorView,"Phone connect")==null&&find(a.window.decorView,"ARM")==null)
+   }
    shot("go-test-$scale-game.png")
-   tap(a,"Test drive");main{check(all(a.window.decorView).filterIsInstance<TestDriveView>().single().mode==TestDriveView.Mode.TEST)}
-   shot("go-test-$scale-drive.png");tap(a,"Reset");tap(a,"Game");tap(a,"Sound");tap(a,"Settings");tap(a,"Done")
-   main{check(find(a.window.decorView,"Sound")!=null);callActivityOnPause(a);callActivityOnResume(a);check(!a.link.snapshot().connected)}
-   tap(a,"Controls");main{symmetry();check(find(a.window.decorView,"Phone connect")!=null);check(all(a.window.decorView).filterIsInstance<JoystickView>().none{it.isEnabled});a.finish()}
+   val before=a.link.snapshot().tx
+   tap(a,"Start practice");Thread.sleep(100)
+   main{
+    val stick=all(a.window.decorView).filterIsInstance<JoystickView>().last();check(stick.isEnabled)
+    val now=SystemClock.uptimeMillis()
+    val down=android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,stick.width/2f,stick.height*.15f,0)
+    stick.dispatchTouchEvent(down);down.recycle()
+   }
+   Thread.sleep(250)
+   main{
+    val stick=all(a.window.decorView).filterIsInstance<JoystickView>().last();val now=SystemClock.uptimeMillis()
+    val up=android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_UP,stick.width/2f,stick.height/2f,0)
+    stick.dispatchTouchEvent(up);up.recycle()
+    check(maze().practice.elapsedMillis>0&&a.link.snapshot().tx==before&&!a.link.snapshot().connected)
+   }
+   tap(a,"Pause");main{check(maze().practice.state==MazePractice.State.PAUSED);check(maze().practice.pose.speed==0f)}
+   tap(a,"Market · 14");tap(a,"Accessories");shot("go-test-$scale-market.png")
+   tap(a,"Buy · 6");tap(a,"Remove");tap(a,"Use");tap(a,"Done")
+   main{check(MazeWallet.decode(saves.getString("wallet","")!!).accessories==setOf("hood"))}
+   tap(a,"Resume")
+   main{
+    // Deterministic finish fixture; the next real animation frame performs clear/save.
+    val p=maze().practice
+    MazePractice::class.java.getDeclaredField("pose").apply{isAccessible=true}.set(p,RoverPose(p.maze.endX,p.maze.endY))
+   }
+   waitFor{main{maze().practice.state==MazePractice.State.CLEARED}}
+   main{check(saves.getInt("completed_level",0)==12);check(MazeRecords.decode(saves.getString("records","")!!).first().level==12)}
+   tap(a,"Clear times");main{check(all(currentRoot(a)).filterIsInstance<android.widget.TextView>().any{it.text.contains("Lv 12")})};tap(a,"Done")
+   tap(a,"Next level");main{check(maze().practice.maze.level==13)}
+   tap(a,"Levels");shot("go-test-$scale-levels.png")
+   main{val level=all(currentRoot(a)).first{it.contentDescription?.toString()?.startsWith("Level 2,")==true};check(level.performClick())}
+   waitForIdleSync();tap(a,"Restart level")
+   main{
+    val p=maze().practice
+    @Suppress("UNCHECKED_CAST")
+    val bumps=MazePractice::class.java.getDeclaredField("impacts").apply{isAccessible=true}.get(p) as MutableList<MazeBump>
+    repeat(3){bumps.add(MazeBump(1f,1f))}
+    MazePractice::class.java.getDeclaredField("state").apply{isAccessible=true}.set(p,MazePractice.State.FAILED)
+    maze().changed()
+   }
+   tap(a,"Restart level");main{check(maze().practice.state==MazePractice.State.RUNNING&&maze().practice.bumps==0)}
+   main{callActivityOnPause(a);callActivityOnResume(a);check(maze().practice.state==MazePractice.State.PAUSED&&!a.link.snapshot().connected)}
+   main{a.onBackPressed()};waitForIdleSync()
+   main{check(find(a.window.decorView,"Phone connect")!=null);check(all(a.window.decorView).filterIsInstance<JoystickView>().none{it.isEnabled})}
+   shot("go-test-$scale-controls.png");main{a.finish()};waitForIdleSync()
+   a=launch();tap(a,"Test");waitForIdleSync()
+   main{check(maze().practice.maze.level==2);check(find(a.window.decorView,"Market · 8")!=null);check(maze().accessories==setOf("hood"));a.finish()}
    waitForIdleSync()
   }
+  saves.edit().clear().commit()
  }
  override fun onStart(){try{
   if(testOnly){
    try{verifyTestGame()}finally{
     for(command in listOf("settings put system font_scale 1.0","wm size reset","wm density reset"))android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand(command)).use{it.readBytes()}
    }
-   finish(Activity.RESULT_OK,Bundle().apply{putString("stream","PASS: offline Test game, disconnected transport, Game/Test/Reset/sound lifecycle and symmetric labels at normal/large text")});return
+   finish(Activity.RESULT_OK,Bundle().apply{putString("stream","PASS: offline maze Test, levels/Market/coins/cosmetics/clear times, progress persistence, failure restart, transport isolation and symmetric captions")});return
   }
   if(wallpaperOnly){
    try{verifyWallpaper()}finally{

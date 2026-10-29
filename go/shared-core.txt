@@ -19,3 +19,4 @@ RoverKinematics
 PopupLayout
 ThemeImageStore
 ThemeImagePolicy
+MazePracticeDialogs

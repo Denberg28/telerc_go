@@ -1,3 +1,9 @@
+# Go1.0.7 — maze Test
+
+Current scope, A–F gates and restrained-wheel acceptance: [GO_MAZE_107.md](GO_MAZE_107.md).
+Native maze workflow and screenshot-like normal/large-text checks replace the
+obsolete arcade Game/Test/music fixture.
+
 # Published Go 1.0.6 — final gates
 
 A/B/C/D/F software and delivery PASS; E phone/HIL remains BLOCKED.

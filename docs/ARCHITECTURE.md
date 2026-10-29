@@ -1,3 +1,11 @@
+# Go maze practice
+
+GoActivity owns one GoMazeSession across view rebuilds; GoMazePanel has no link
+reference and mirrors the latest released TeleRC Test layout/model/save schema.
+AppDialog/MazePracticeDialogs bound and track game sheets. Test entry disconnects
+the live link; practice popup/lifecycle neutralizes and pauses local motion.
+See [scope and compatibility](GO_MAZE_107.md).
+
 # Go private wallpaper
 
 GoActivity imports images through ACTION_OPEN_DOCUMENT into the shared
