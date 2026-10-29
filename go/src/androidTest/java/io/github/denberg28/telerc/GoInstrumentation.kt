@@ -170,7 +170,9 @@ class GoInstrumentation:Instrumentation(){
     val l=rect(labels[0]);val r=rect(labels[1]);val ls=rect(sticks[0]);val rs=rect(sticks[1])
     check(l.top==r.top&&l.height()==r.height()&&ls.top==rs.top&&ls.height()==rs.height()){"Asymmetric captions/sticks"}
     check(kotlin.math.abs(l.centerX()-ls.centerX())<=1&&kotlin.math.abs(r.centerX()-rs.centerX())<=1)
-    val test=rect(all.first{it.tag=="go-test"});val phone=rect(find(a.window.decorView,if(sticks[0].isEnabled)"Offline" else "Phone connect")!!)
+    val pageButton=all.first{it.tag=="go-test"} as android.widget.TextView
+    check(pageButton.lineCount==1){"Test/Controls action must stay on one line"}
+    val test=rect(pageButton);val phone=rect(find(a.window.decorView,if(sticks[0].isEnabled)"Offline" else "Phone connect")!!)
     check(test.right<phone.left){"Test must precede Phone connect"}
    }
    main{symmetry();check(!a.link.snapshot().enabled)}

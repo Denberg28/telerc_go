@@ -112,7 +112,7 @@ class GoActivity:Activity(){
   connect=button("Phone connect",true){phoneConnect()}.apply{contentDescription="Phone connection; Wi-Fi by default"}
   header.addView(button(if(testing)"Controls" else "Test"){
    link.disconnect();resetSticks();testing=!testing;render()
-  }.apply{tag="go-test";contentDescription=if(testing)"Return to rover controls; connection stays disconnected" else "Open offline Test game; disconnect rover"},LinearLayout.LayoutParams(dp(76),row()).apply{rightMargin=dp(8)})
+  }.apply{tag="go-test";maxLines=1;contentDescription=if(testing)"Return to rover controls; connection stays disconnected" else "Open offline Test game; disconnect rover"},LinearLayout.LayoutParams(dp(92),row()).apply{rightMargin=dp(8)})
   header.addView(connect,LinearLayout.LayoutParams(dp(142),row()))
   header.addView(button("Settings"){settings()},LinearLayout.LayoutParams(dp(92),row()).apply{leftMargin=dp(8)})
   root.addView(header,LinearLayout.LayoutParams(-1,-2))
