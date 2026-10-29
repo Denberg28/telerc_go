@@ -1,3 +1,9 @@
+# Published Go 1.0.6 — final gates
+
+A/B/C/D/F software and delivery PASS; E phone/HIL remains BLOCKED.
+[Signed release result, producer evidence and acceptance](RELEASE_RESULT_GO_106.md)
+supersedes pending/local-only notes below.
+
 # Go 1.0.6 — offline Test and captions
 
 Current A–F gates and executable phone/raised-wheel procedure: [GO_TEST_106.md](GO_TEST_106.md).

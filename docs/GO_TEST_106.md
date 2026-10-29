@@ -1,7 +1,14 @@
+# Published Go 1.0.6
+
+[Final signed prerelease result](RELEASE_RESULT_GO_106.md): production APK,
+retained signer/code 1002, 196 JVM tests, native game/geometry and gallery checks,
+default sanitizers and all 11 hosted assets verified. Phone/HIL remains pending.
+This result supersedes build/publication-pending notes retained below.
+
 # TeleRC Go 1.0.6 — offline Test and control captions
 
 Baseline: `999a4800d5f8783e34334aa591bdcdd95fdb05b3`, released Go 1.0.5/code1001.
-Go 1.0.6/code1002 preserves the production package and signing configuration.
+Go 1.0.6/code 1002 preserves the production package and signing configuration.
 Only Go UI/game sources, native tests, candidate packaging and these notes change.
 No firmware/protocol change or board compilation is applicable.
 
@@ -31,7 +38,7 @@ a 640x360dp landscape, plus game switching, socket cancellation and lifecycle.
 | C regression | PASS locally with limits | Shared-core checks, normal host suite and 18 archive tests pass. ASan/UBSan passes with local leak check disabled; default LeakSanitizer is blocked by /proc/ptrace. CI retains default sanitizers. |
 | D integration | NOT TESTED | Native checks compile; execution requires an emulator/device. No local KVM/device is attached. |
 | E phone/HIL | BLOCKED | No attached phone/rover; follow acceptance below. |
-| F delivery | PASS — local Candidate packaged | Separate debug-signed candidate identity/code1002, APK signature/ZIP/alignment verified. Production signing and GitHub publication remain pending. |
+| F delivery | PASS — local Candidate packaged | Separate debug-signed candidate identity/code 1002, APK signature/ZIP/alignment verified. Production signing and GitHub publication remain pending. |
 
 Build artifacts and workflow results supersede pending software evidence only.
 A debug Candidate is a separate app with separate data, not a production upgrade.
@@ -87,7 +94,7 @@ Go34 and full-app162 JVM tests passed with zero failure/error/skip.
 Lint completed without errors (existing/ordinary warnings remain).
 
 A subsequent `:go:assembleDebug -PcandidateInstall=true` produces the independently
-installable preview `io.github.denberg28.telerc.go.candidate`, version1.0.6/code1002.
+installable preview `io.github.denberg28.telerc.go.candidate`, version 1.0.6/code 1002.
 APK signature verification, 16KiB ZIP alignment and ZIP integrity pass.
 SHA256 `76b0aabf1b26d09cfad8ea03cc13fce2b8447d0acd00c266e953b452a490fc8e`.
 Install Candidate alongside the current production Go; it has separate settings
