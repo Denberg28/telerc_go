@@ -1,3 +1,11 @@
+## Go 1.0.6 — 29 October 2026
+
+- Add Test before Phone connect for offline arcade Game/Test-drive, Reset and music.
+- Disconnect/cancel live control on entry; returning requires explicit reconnect/ARM.
+- Match Steer/Drive caption heights, horizontal centering and vertical gaps.
+- Add native short-landscape normal/large-text geometry and game/lifecycle checks.
+- Production version code1002; no firmware update. See docs/GO_TEST_106.md.
+
 # TeleRC Go 1.0.3
 
 - Fit settings, connection and sensitivity sheets without scroll containers;
