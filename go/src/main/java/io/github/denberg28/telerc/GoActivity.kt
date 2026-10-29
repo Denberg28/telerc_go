@@ -47,6 +47,9 @@ class GoActivity:Activity(){
  private var updateDialog:Dialog?=null
  private var wallpaper:ImageView?=null
  private var themeBitmap:Bitmap?=null
+ private var testing=false
+ private var course:TestDriveView?=null
+ private var music:Button?=null
  private var imageWork=false
  private var pendingImageUri:android.net.Uri?=null
  private fun dp(value:Int)=(value*resources.displayMetrics.density+.5f).toInt()
@@ -73,6 +76,7 @@ class GoActivity:Activity(){
  private fun endpoint()=GoEndpoint(GoProfile.WIFI,prefs.getString("WIFI.host","192.168.4.1")?:"192.168.4.1",
   prefs.getInt("WIFI.port",14550),prefs.getInt("WIFI.local",14550),prefs.getInt("WIFI.system",1))
  private fun phoneConnect(){
+  if(testing)return
   if(link.snapshot().connected){link.disconnect();resetSticks();refresh();return}
   val value=endpoint()
   if(value.valid()){link.connect(value);refresh()}else connectionDetails()
@@ -80,7 +84,7 @@ class GoActivity:Activity(){
  private fun resetSticks(){left?.reset();right?.reset();steer=1500;drive=1500;refreshLabels()}
  private fun dismissSheet(){showing?.setOnDismissListener(null);showing?.dismiss();showing=null;updateDialog=null;updateMessage=null}
  private fun render(){
-  dismissSheet();resetSticks();left=null;right=null
+  dismissSheet();course?.stop();course=null;music=null;resetSticks();left=null;right=null
   val frame=FrameLayout(this)
   wallpaper=backgroundImage().apply{tag="go-wallpaper"}
   frame.addView(wallpaper,FrameLayout.LayoutParams(-1,-1))
@@ -106,18 +110,28 @@ class GoActivity:Activity(){
    val a=obtainStyledAttributes(intArrayOf(android.R.attr.selectableItemBackground));foreground=a.getDrawable(0);a.recycle()
   },LinearLayout.LayoutParams(0,row(),1f))
   connect=button("Phone connect",true){phoneConnect()}.apply{contentDescription="Phone connection; Wi-Fi by default"}
+  header.addView(button(if(testing)"Controls" else "Test"){
+   link.disconnect();resetSticks();testing=!testing;render()
+  }.apply{tag="go-test";contentDescription=if(testing)"Return to rover controls; connection stays disconnected" else "Open offline Test game; disconnect rover"},LinearLayout.LayoutParams(dp(76),row()).apply{rightMargin=dp(8)})
   header.addView(connect,LinearLayout.LayoutParams(dp(142),row()))
   header.addView(button("Settings"){settings()},LinearLayout.LayoutParams(dp(92),row()).apply{leftMargin=dp(8)})
   root.addView(header,LinearLayout.LayoutParams(-1,-2))
   val controls=LinearLayout(this).apply{isBaselineAligned=false}
   fun stick(vertical:Boolean)=LinearLayout(this).apply{
-   orientation=LinearLayout.VERTICAL;setPadding(dp(4),dp(8),dp(4),0)
-   val label=text(if(vertical)"DRIVE · CH2" else "STEER · CH1",13f).apply{gravity=Gravity.CENTER}
+   orientation=LinearLayout.VERTICAL;setPadding(dp(4),0,dp(4),dp(12))
+   val label=text(if(vertical)"DRIVE · CH2" else "STEER · CH1",13f).apply{
+    gravity=Gravity.CENTER;maxLines=1;tag=if(vertical)"go-drive-label" else "go-steer-label"
+    setAutoSizeTextTypeUniformWithConfiguration(11,13,1,android.util.TypedValue.COMPLEX_UNIT_SP)
+   }
    if(vertical)driveLabel=label else steerLabel=label
-   addView(label,LinearLayout.LayoutParams(-1,-2))
-   val joystick=JoystickView(this@GoActivity,vertical){value->if(vertical)drive=value else steer=value;link.axes(steer,drive);refreshLabels()}
+   addView(label,LinearLayout.LayoutParams(-1,dp(28)))
+   val joystick=JoystickView(this@GoActivity,vertical){value->
+    if(vertical)drive=value else steer=value
+    if(testing){if(vertical)course?.setDrive(value)else course?.setSteering(value)}else link.axes(steer,drive)
+    refreshLabels()
+   }
    if(vertical)this@GoActivity.right=joystick else this@GoActivity.left=joystick
-   addView(joystick,LinearLayout.LayoutParams(-1,0,1f))
+   addView(joystick,LinearLayout.LayoutParams(-1,0,1f).apply{topMargin=dp(8)})
   }
   controls.addView(stick(false),LinearLayout.LayoutParams(0,-1,1.25f))
   val center=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL;setPadding(dp(6),dp(8),dp(6),dp(12))}
@@ -128,15 +142,45 @@ class GoActivity:Activity(){
   center.addView(status,LinearLayout.LayoutParams(-1,-2))
   arm=button("ARM",true){resetSticks();link.toggleArm();refresh()}.apply{tag="go-arm"}
   center.addView(arm,LinearLayout.LayoutParams(-1,row()).apply{topMargin=dp(8)})
-  controls.addView(center,LinearLayout.LayoutParams(0,-1,1f))
+  controls.addView(if(testing)gamePanel()else center,LinearLayout.LayoutParams(0,-1,if(testing)2.6f else 1f).apply{leftMargin=dp(8);rightMargin=dp(8)})
   controls.addView(stick(true),LinearLayout.LayoutParams(0,-1,1.25f))
-  root.addView(controls,LinearLayout.LayoutParams(-1,0,1f))
+  root.addView(controls,LinearLayout.LayoutParams(-1,0,1f).apply{topMargin=dp(12)})
   frame.addView(root,FrameLayout.LayoutParams(-1,-1));setContentView(frame);refresh()
+ }
+ private fun gamePanel()=LinearLayout(this).apply{
+  orientation=LinearLayout.VERTICAL
+  val game=TestDriveView(this@GoActivity).apply{tag="go-game"};course=game
+  addView(game,LinearLayout.LayoutParams(-1,0,1f))
+  val actions=LinearLayout(this@GoActivity).apply{isBaselineAligned=false}
+  val mode=button("Test drive"){}
+  music=button("Sound"){}.apply{
+   contentDescription="Turn game music on or off"
+   setOnClickListener{isSelected=game.setMusic(!isSelected);text=if(isSelected)"Sound on" else "Sound"}
+  }
+  mode.setOnClickListener{
+   resetSticks()
+   val free=game.mode==TestDriveView.Mode.GAME
+   game.setMode(if(free)TestDriveView.Mode.TEST else TestDriveView.Mode.GAME)
+   mode.text=if(free)"Game" else "Test drive"
+   music?.apply{isEnabled=!free;isSelected=false;text="Sound"}
+  }
+  actions.addView(mode,LinearLayout.LayoutParams(0,row(),1f))
+  actions.addView(button("Reset"){resetSticks();game.resetCourse()},LinearLayout.LayoutParams(0,row(),1f).apply{leftMargin=dp(8)})
+  actions.addView(music,LinearLayout.LayoutParams(0,row(),1f).apply{leftMargin=dp(8)})
+  addView(actions,LinearLayout.LayoutParams(-1,row()).apply{topMargin=dp(8);bottomMargin=dp(12)})
  }
  private fun refreshLabels(){steerLabel?.text="STEER · $steer";driveLabel?.text="DRIVE · $drive"}
  private fun refresh(){
   if(!::link.isInitialized)return
-  val s=link.snapshot();status?.text=s.text
+  val s=link.snapshot()
+  if(testing){
+   status?.text="Offline Test · rover disconnected";arm?.isEnabled=false
+   connect?.apply{text="Offline";isEnabled=false}
+   left?.isEnabled=true;right?.isEnabled=true
+   return
+  }
+  connect?.isEnabled=true
+  status?.text=s.text
   arm?.text=when{s.handset->"Radio control";s.pending->"Cancel arming";s.resume->"Resume control";s.armed->"DISARM";else->"ARM"}
   arm?.isEnabled=!imageWork&&!s.handset&&(s.pending||s.fresh&&s.verified&&!s.stopped)
   val canDrive=!imageWork&&s.fresh&&s.enabled&&s.armed&&s.driveReady&&!s.handset
@@ -146,7 +190,7 @@ class GoActivity:Activity(){
  }
  /** All children have intrinsic heights; no weighted body, clipping or scrollbars. */
  private fun dialog(title:String,content:View,positive:Pair<String,()->Unit>?=null):Dialog{
-  link.stop(true);resetSticks();dismissSheet()
+  link.stop(true);resetSticks();dismissSheet();course?.stop();music?.apply{isSelected=false;text="Sound"}
   val d=Dialog(this);d.requestWindowFeature(Window.FEATURE_NO_TITLE)
   val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),dp(12));background=shape(AppColors.surface(this@GoActivity));tag="go-sheet"}
   panel.addView(text(title,18f).apply{gravity=Gravity.CENTER;maxLines=1;setAutoSizeTextTypeUniformWithConfiguration(14,18,1,android.util.TypedValue.COMPLEX_UNIT_SP)},LinearLayout.LayoutParams(-1,dp(28)))
@@ -167,7 +211,7 @@ class GoActivity:Activity(){
    setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
    setLayout(width,panel.measuredHeight)
   }
-  showing=d;d.setOnDismissListener{if(showing===d){showing=null;updateDialog=null;updateMessage=null}}
+  showing=d;d.setOnDismissListener{if(showing===d){showing=null;updateDialog=null;updateMessage=null;course?.resume()}}
   d.show();refresh();return d
  }
  private fun settings(){
@@ -201,7 +245,7 @@ class GoActivity:Activity(){
  @Suppress("DEPRECATION")
  private fun chooseBackground(){
   if(imageWork)return
-  link.stop(true);resetSticks();dismissSheet();refresh()
+  link.stop(true);resetSticks();dismissSheet();course?.stop();music?.apply{isSelected=false;text="Sound"};refresh()
   try{
    startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{
     addCategory(Intent.CATEGORY_OPENABLE);type="image/*";addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -298,9 +342,11 @@ class GoActivity:Activity(){
   val d=dialog("TeleRC Go update",message,"Download" to {link.disconnect();resetSticks();download();refresh()})
   updateDialog=d;updateMessage=message
  }
+ @Deprecated("Platform back callback")
+ override fun onBackPressed(){if(testing){link.disconnect();testing=false;render()}else super.onBackPressed()}
  override fun onConfigurationChanged(config:Configuration){super.onConfigurationChanged(config);link.stop(true);render()}
- override fun onResume(){super.onResume();if(responseDirty){responseDirty=false;render()};if(::link.isInitialized)link.foreground(true);if(::updater.isInitialized)updater.resumePendingInstall()}
+ override fun onResume(){super.onResume();course?.resume();if(responseDirty){responseDirty=false;render()};if(::link.isInitialized)link.foreground(true);if(::updater.isInitialized)updater.resumePendingInstall()}
  override fun onWindowFocusChanged(hasFocus:Boolean){super.onWindowFocusChanged(hasFocus);if(hasFocus&&::updater.isInitialized)updater.resumePendingInstall()}
- override fun onPause(){if(::link.isInitialized)link.foreground(false);dismissSheet();resetSticks();super.onPause()}
- override fun onDestroy(){if(::link.isInitialized)link.close();if(::updater.isInitialized)updater.close();ui.removeCallbacksAndMessages(null);dismissSheet();super.onDestroy()}
+ override fun onPause(){course?.stop();music?.apply{isSelected=false;text="Sound"};if(::link.isInitialized)link.foreground(false);dismissSheet();resetSticks();super.onPause()}
+ override fun onDestroy(){course?.stop();if(::link.isInitialized)link.close();if(::updater.isInitialized)updater.close();ui.removeCallbacksAndMessages(null);dismissSheet();super.onDestroy()}
 }

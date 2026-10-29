@@ -28,13 +28,13 @@ jobs:
       - name: Package independent preview APK
         run: |
           ./gradlew :go:assembleDebug -PcandidateInstall=true --no-daemon
-          cp go/build/outputs/apk/debug/go-debug.apk go/build/TeleRC-Go-v1.0.5-Candidate.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify go/build/TeleRC-Go-v1.0.5-Candidate.apk
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 go/build/TeleRC-Go-v1.0.5-Candidate.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging go/build/TeleRC-Go-v1.0.5-Candidate.apk | grep "name='io.github.denberg28.telerc.go.candidate' versionCode='1001' versionName='1.0.5'"
-          unzip -tq go/build/TeleRC-Go-v1.0.5-Candidate.apk
+          cp go/build/outputs/apk/debug/go-debug.apk go/build/TeleRC-Go-v1.0.6-Candidate.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify go/build/TeleRC-Go-v1.0.6-Candidate.apk
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 go/build/TeleRC-Go-v1.0.6-Candidate.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging go/build/TeleRC-Go-v1.0.6-Candidate.apk | grep "name='io.github.denberg28.telerc.go.candidate' versionCode='1002' versionName='1.0.6'"
+          unzip -tq go/build/TeleRC-Go-v1.0.6-Candidate.apk
           printf 'Source: %s\nBuild: %s/%s/actions/runs/%s\nIndependent debug-signed Candidate package; production release APK remains unsigned without the retained signing environment.\n' "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > go/build/WALLPAPER_BUILD_INFO.txt
-          sha256sum go/build/TeleRC-Go-v1.0.5-Candidate.apk go/build/outputs/apk/release/*.apk > go/build/SHA256SUMS.txt
+          sha256sum go/build/TeleRC-Go-v1.0.6-Candidate.apk go/build/outputs/apk/release/*.apk > go/build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -42,7 +42,7 @@ jobs:
           path: |
             go/build/outputs/apk/debug/
             go/build/outputs/apk/release/
-            go/build/TeleRC-Go-v1.0.5-Candidate.apk
+            go/build/TeleRC-Go-v1.0.6-Candidate.apk
             go/build/WALLPAPER_BUILD_INFO.txt
             go/build/SHA256SUMS.txt
             go/build/reports/

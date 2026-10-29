@@ -1,3 +1,10 @@
+# Go 1.0.6 — offline Test and captions
+
+Current A–F gates and executable phone/raised-wheel procedure: [GO_TEST_106.md](GO_TEST_106.md).
+Native `GoInstrumentation -e testOnly true` covers mode isolation, socket
+cancellation, symmetrical labels/sticks, Game/Test/Reset and audio/lifecycle
+at normal and 1.3 text on 640x360dp landscape.
+
 # Published Go 1.0.5 prerelease
 
 [Final signed release result](RELEASE_RESULT_GO_105.md): production APK, same

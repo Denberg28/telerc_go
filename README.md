@@ -1,3 +1,13 @@
+# TeleRC Go 1.0.6 — Test game and aligned controls
+
+**Test**, immediately before **Phone connect**, opens the offline arcade rover
+game and free-drive preview. **Controls** returns without reconnecting. Both
+joystick captions now share the same alignment and spacing.
+[Scope, verification and phone acceptance](docs/GO_TEST_106.md).
+Local Android debug/release builds and lint passed, with 34 Go + 162 full-app
+unit tests. An independent Candidate preview APK is built. Native/device checks
+and production-signed GitHub publication remain pending.
+
 # TeleRC Go 1.0.5 — gallery wallpaper
 
 Dedicated repository: [Denberg28/telerc_go](https://github.com/Denberg28/telerc_go).

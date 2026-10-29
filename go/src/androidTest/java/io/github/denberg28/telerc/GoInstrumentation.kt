@@ -12,8 +12,9 @@ import java.net.DatagramPacket
 import java.net.InetAddress
 import java.io.File
 class GoInstrumentation:Instrumentation(){
+ private var testOnly=false
  private var wallpaperOnly=false
- override fun onCreate(args:Bundle?){super.onCreate(args);wallpaperOnly=args?.getString("wallpaperOnly")=="true";start()}
+ override fun onCreate(args:Bundle?){super.onCreate(args);wallpaperOnly=args?.getString("wallpaperOnly")=="true";testOnly=args?.getString("testOnly")=="true";start()}
  private fun <T> main(action:()->T):T{var value:Any?=null;var failure:Throwable?=null;runOnMainSync{try{value=action()}catch(t:Throwable){failure=t}};failure?.let{throw it};@Suppress("UNCHECKED_CAST")return value as T}
  private fun waitFor(test:()->Boolean){val until=SystemClock.elapsedRealtime()+10000;while(SystemClock.elapsedRealtime()<until){if(test())return;Thread.sleep(30)};error("Timed out waiting for Go UI")}
  private fun find(v:View,text:String):View?{if(v is android.widget.TextView&&v.text.toString()==text)return v;if(v is ViewGroup)for(i in 0 until v.childCount)find(v.getChildAt(i),text)?.let{return it};return null}
@@ -70,8 +71,8 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyUpdater(a:GoActivity){
   val candidate=File(targetContext.filesDir,"update-candidate.apk");check(candidate.isFile)
   val digest=GoApkVerifier.hash(candidate)
-  check(GoApkVerifier.verify(a,candidate,digest,"1.0.6")){"Newer same-package/signer APK rejected"}
-  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.6")){"Wrong hash accepted"}
+  check(GoApkVerifier.verify(a,candidate,digest,"1.0.7")){"Newer same-package/signer APK rejected"}
+  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.7")){"Wrong hash accepted"}
   check(!GoApkVerifier.verify(a,candidate,digest,"9.9.9")){"Wrong version accepted"}
   val current=File(a.applicationInfo.sourceDir);check(!GoApkVerifier.verify(a,current,GoApkVerifier.hash(current))){"Same-code APK accepted"}
   val other=File(targetContext.filesDir,"update-wrong-package.apk");check(!GoApkVerifier.verify(a,other,GoApkVerifier.hash(other))){"Full TeleRC APK accepted"}
@@ -80,15 +81,15 @@ class GoInstrumentation:Instrumentation(){
   val messages=java.util.Collections.synchronizedList(mutableListOf<String>())
   val fake=GoUpdater(a,{messages.add(it)},{value,_->offered.set(value)},{url->
    calls.add(url)
-   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.6"},{"ref":"refs/tags/go-v1.0.7"}]"""
+   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.7"},{"ref":"refs/tags/go-v1.0.8"}]"""
    else {
-    val v=if(url.endsWith("1.0.7"))"1.0.7" else "1.0.6"
-    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.7"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
+    val v=if(url.endsWith("1.0.8"))"1.0.8" else "1.0.7"
+    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.8"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
    }
   })
   main{fake.check()}
   try{waitFor{offered.get()!=null||messages.any{it!="Checking for updates…"}}}catch(t:Throwable){error("Update callback timed out: calls=$calls messages=$messages finishing=${a.isFinishing} destroyed=${a.isDestroyed} fixtureBytes=${candidate.length()}")}
-  check(offered.get()?.version=="1.0.6"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
+  check(offered.get()?.version=="1.0.7"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
   check(calls.none{it.endsWith("releases/latest")||it.endsWith("v9.9.9")});main{fake.close()}
  }
  private fun await(a:GoActivity,phase:String,test:()->Boolean){try{waitFor(test)}catch(t:Throwable){error("$phase: ${a.link.snapshot()}")}}
@@ -153,7 +154,53 @@ class GoInstrumentation:Instrumentation(){
   check(!ThemeImageStore.exists(targetContext))
   main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width!=320);a.finish()}
  }
+ private fun verifyTestGame(){
+  for(scale in listOf("1.0","1.3")){
+   for(command in listOf("wm size 1280x720","wm density 320","settings put system font_scale $scale"))
+    android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand(command)).use{it.readBytes()}
+   Thread.sleep(1500)
+   val a=startActivitySync(Intent(targetContext,GoActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as GoActivity
+   imageReady(a);waitForIdleSync()
+   fun rect(v:View)=android.graphics.Rect().also{check(v.getGlobalVisibleRect(it)&&it.width()>=v.width-1&&it.height()>=v.height-1)}
+   fun symmetry(){
+    val all=all(a.window.decorView)
+    val labels=listOf("go-steer-label","go-drive-label").map{tag->all.first{it.tag==tag}}
+    val sticks=all.filterIsInstance<JoystickView>()
+    check(sticks.size==2)
+    val l=rect(labels[0]);val r=rect(labels[1]);val ls=rect(sticks[0]);val rs=rect(sticks[1])
+    check(l.top==r.top&&l.height()==r.height()&&ls.top==rs.top&&ls.height()==rs.height()){"Asymmetric captions/sticks"}
+    check(kotlin.math.abs(l.centerX()-ls.centerX())<=1&&kotlin.math.abs(r.centerX()-rs.centerX())<=1)
+    val test=rect(all.first{it.tag=="go-test"});val phone=rect(find(a.window.decorView,if(sticks[0].isEnabled)"Offline" else "Phone connect")!!)
+    check(test.right<phone.left){"Test must precede Phone connect"}
+   }
+   main{symmetry();check(!a.link.snapshot().enabled)}
+   shot("go-test-$scale-controls.png")
+   // Start a real socket attempt, then enter Test and verify it cannot reconnect.
+   main{a.link.connect(GoEndpoint(GoProfile.WIFI,"10.0.2.2",14550,0,1))}
+   tap(a,"Test");Thread.sleep(300)
+   main{
+    symmetry();check(!a.link.snapshot().connected&&!a.link.snapshot().enabled&&!a.link.snapshot().pending)
+    check(find(a.window.decorView,"Offline")?.isEnabled==false)
+    val sticks=all(a.window.decorView).filterIsInstance<JoystickView>();check(sticks.all{it.isEnabled})
+    val game=all(a.window.decorView).filterIsInstance<TestDriveView>().single();check(game.mode==TestDriveView.Mode.GAME)
+    game.setSteering(1800);game.setDrive(1800)
+   }
+   Thread.sleep(300);main{check(!a.link.snapshot().connected&&!a.link.snapshot().pending)}
+   shot("go-test-$scale-game.png")
+   tap(a,"Test drive");main{check(all(a.window.decorView).filterIsInstance<TestDriveView>().single().mode==TestDriveView.Mode.TEST)}
+   shot("go-test-$scale-drive.png");tap(a,"Reset");tap(a,"Game");tap(a,"Sound");tap(a,"Settings");tap(a,"Done")
+   main{check(find(a.window.decorView,"Sound")!=null);callActivityOnPause(a);callActivityOnResume(a);check(!a.link.snapshot().connected)}
+   tap(a,"Controls");main{symmetry();check(find(a.window.decorView,"Phone connect")!=null);check(all(a.window.decorView).filterIsInstance<JoystickView>().none{it.isEnabled});a.finish()}
+   waitForIdleSync()
+  }
+ }
  override fun onStart(){try{
+  if(testOnly){
+   try{verifyTestGame()}finally{
+    for(command in listOf("settings put system font_scale 1.0","wm size reset","wm density reset"))android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand(command)).use{it.readBytes()}
+   }
+   finish(Activity.RESULT_OK,Bundle().apply{putString("stream","PASS: offline Test game, disconnected transport, Game/Test/Reset/sound lifecycle and symmetric labels at normal/large text")});return
+  }
   if(wallpaperOnly){
    try{verifyWallpaper()}finally{
     for(command in listOf("settings put system font_scale 1.0","wm size reset","wm density reset"))android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand(command)).use{it.readBytes()}
@@ -177,8 +224,8 @@ class GoInstrumentation:Instrumentation(){
    val a=startActivitySync(Intent(targetContext,GoActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as GoActivity
    waitFor{main{find(a.window.decorView,"Phone connect")!=null}}
    main{
-    for(label in listOf("Setup","Controls","Test","Waypoint","Balance","LoRa","Phone control","Use ELRS","STOP / Disarm"))check(find(a.window.decorView,label)==null)
-    check(all(a.window.decorView).count{it is android.widget.Button}==3)
+    for(label in listOf("Setup","Controls","Waypoint","Balance","LoRa","Phone control","Use ELRS","STOP / Disarm"))check(find(a.window.decorView,label)==null)
+    check(all(a.window.decorView).count{it is android.widget.Button}==4)
     for(label in listOf("Phone connect","Settings","ARM"))visible(a,label)
     check(!find(a.window.decorView,"ARM")!!.isEnabled);controlsPosition(a)
    }
