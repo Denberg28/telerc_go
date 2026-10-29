@@ -48,8 +48,11 @@ class GoActivity:Activity(){
  private var wallpaper:ImageView?=null
  private var themeBitmap:Bitmap?=null
  private var testing=false
- private var course:TestDriveView?=null
- private var music:Button?=null
+ private var mazePanel:GoMazePanel?=null
+ private val mazeSession by lazy{GoMazeSession(this)}
+ internal val practicePopup:Dialog? get()=mazePanel?.dialog
+ internal fun prepareForPracticeDialog(){link.stop(true);resetSticks();mazePanel?.pause()}
+ private fun leaveTest(){link.disconnect();testing=false;render()}
  private var imageWork=false
  private var pendingImageUri:android.net.Uri?=null
  private fun dp(value:Int)=(value*resources.displayMetrics.density+.5f).toInt()
@@ -81,10 +84,10 @@ class GoActivity:Activity(){
   val value=endpoint()
   if(value.valid()){link.connect(value);refresh()}else connectionDetails()
  }
- private fun resetSticks(){left?.reset();right?.reset();steer=1500;drive=1500;refreshLabels()}
+ private fun resetSticks(){mazePanel?.neutral();left?.reset();right?.reset();steer=1500;drive=1500;refreshLabels()}
  private fun dismissSheet(){showing?.setOnDismissListener(null);showing?.dismiss();showing=null;updateDialog=null;updateMessage=null}
  private fun render(){
-  dismissSheet();course?.stop();course=null;music=null;resetSticks();left=null;right=null
+  dismissSheet();mazePanel?.close();mazePanel=null;resetSticks();left=null;right=null;status=null;arm=null;connect=null
   val frame=FrameLayout(this)
   wallpaper=backgroundImage().apply{tag="go-wallpaper"}
   frame.addView(wallpaper,FrameLayout.LayoutParams(-1,-1))
@@ -99,6 +102,11 @@ class GoActivity:Activity(){
      @Suppress("DEPRECATION")
      v.setPadding(dp(12)+insets.systemWindowInsetLeft,dp(8)+insets.systemWindowInsetTop,dp(12)+insets.systemWindowInsetRight,dp(8)+insets.systemWindowInsetBottom)
     };insets}
+  }
+  if(testing){
+   mazePanel=GoMazePanel(this,mazeSession,::leaveTest,::settings)
+   root.addView(mazePanel,LinearLayout.LayoutParams(-1,-1))
+   frame.addView(root,FrameLayout.LayoutParams(-1,-1));setContentView(frame);return
   }
   val header=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;isBaselineAligned=false}
   header.addView(text("TeleRC Go v${BuildConfig.VERSION_NAME}",17f).apply{
@@ -127,7 +135,7 @@ class GoActivity:Activity(){
    addView(label,LinearLayout.LayoutParams(-1,dp(28)))
    val joystick=JoystickView(this@GoActivity,vertical){value->
     if(vertical)drive=value else steer=value
-    if(testing){if(vertical)course?.setDrive(value)else course?.setSteering(value)}else link.axes(steer,drive)
+    link.axes(steer,drive)
     refreshLabels()
    }
    if(vertical)this@GoActivity.right=joystick else this@GoActivity.left=joystick
@@ -142,43 +150,16 @@ class GoActivity:Activity(){
   center.addView(status,LinearLayout.LayoutParams(-1,-2))
   arm=button("ARM",true){resetSticks();link.toggleArm();refresh()}.apply{tag="go-arm"}
   center.addView(arm,LinearLayout.LayoutParams(-1,row()).apply{topMargin=dp(8)})
-  controls.addView(if(testing)gamePanel()else center,LinearLayout.LayoutParams(0,-1,if(testing)2.6f else 1f).apply{leftMargin=dp(8);rightMargin=dp(8)})
+  controls.addView(center,LinearLayout.LayoutParams(0,-1,1f).apply{leftMargin=dp(8);rightMargin=dp(8)})
   controls.addView(stick(true),LinearLayout.LayoutParams(0,-1,1.25f))
   root.addView(controls,LinearLayout.LayoutParams(-1,0,1f).apply{topMargin=dp(12)})
   frame.addView(root,FrameLayout.LayoutParams(-1,-1));setContentView(frame);refresh()
- }
- private fun gamePanel()=LinearLayout(this).apply{
-  orientation=LinearLayout.VERTICAL
-  val game=TestDriveView(this@GoActivity).apply{tag="go-game"};course=game
-  addView(game,LinearLayout.LayoutParams(-1,0,1f))
-  val actions=LinearLayout(this@GoActivity).apply{isBaselineAligned=false}
-  val mode=button("Test drive"){}
-  music=button("Sound"){}.apply{
-   contentDescription="Turn game music on or off"
-   setOnClickListener{isSelected=game.setMusic(!isSelected);text=if(isSelected)"Sound on" else "Sound"}
-  }
-  mode.setOnClickListener{
-   resetSticks()
-   val free=game.mode==TestDriveView.Mode.GAME
-   game.setMode(if(free)TestDriveView.Mode.TEST else TestDriveView.Mode.GAME)
-   mode.text=if(free)"Game" else "Test drive"
-   music?.apply{isEnabled=!free;isSelected=false;text="Sound"}
-  }
-  actions.addView(mode,LinearLayout.LayoutParams(0,row(),1f))
-  actions.addView(button("Reset"){resetSticks();game.resetCourse()},LinearLayout.LayoutParams(0,row(),1f).apply{leftMargin=dp(8)})
-  actions.addView(music,LinearLayout.LayoutParams(0,row(),1f).apply{leftMargin=dp(8)})
-  addView(actions,LinearLayout.LayoutParams(-1,row()).apply{topMargin=dp(8);bottomMargin=dp(12)})
  }
  private fun refreshLabels(){steerLabel?.text="STEER · $steer";driveLabel?.text="DRIVE · $drive"}
  private fun refresh(){
   if(!::link.isInitialized)return
   val s=link.snapshot()
-  if(testing){
-   status?.text="Offline Test · rover disconnected";arm?.isEnabled=false
-   connect?.apply{text="Offline";isEnabled=false}
-   left?.isEnabled=true;right?.isEnabled=true
-   return
-  }
+  if(testing)return
   connect?.isEnabled=true
   status?.text=s.text
   arm?.text=when{s.handset->"Radio control";s.pending->"Cancel arming";s.resume->"Resume control";s.armed->"DISARM";else->"ARM"}
@@ -190,7 +171,7 @@ class GoActivity:Activity(){
  }
  /** All children have intrinsic heights; no weighted body, clipping or scrollbars. */
  private fun dialog(title:String,content:View,positive:Pair<String,()->Unit>?=null):Dialog{
-  link.stop(true);resetSticks();dismissSheet();course?.stop();music?.apply{isSelected=false;text="Sound"}
+  link.stop(true);resetSticks();dismissSheet();mazePanel?.pause()
   val d=Dialog(this);d.requestWindowFeature(Window.FEATURE_NO_TITLE)
   val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),dp(12));background=shape(AppColors.surface(this@GoActivity));tag="go-sheet"}
   panel.addView(text(title,18f).apply{gravity=Gravity.CENTER;maxLines=1;setAutoSizeTextTypeUniformWithConfiguration(14,18,1,android.util.TypedValue.COMPLEX_UNIT_SP)},LinearLayout.LayoutParams(-1,dp(28)))
@@ -211,7 +192,7 @@ class GoActivity:Activity(){
    setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
    setLayout(width,panel.measuredHeight)
   }
-  showing=d;d.setOnDismissListener{if(showing===d){showing=null;updateDialog=null;updateMessage=null;course?.resume()}}
+  showing=d;d.setOnDismissListener{if(showing===d){showing=null;updateDialog=null;updateMessage=null}}
   d.show();refresh();return d
  }
  private fun settings(){
@@ -245,7 +226,7 @@ class GoActivity:Activity(){
  @Suppress("DEPRECATION")
  private fun chooseBackground(){
   if(imageWork)return
-  link.stop(true);resetSticks();dismissSheet();course?.stop();music?.apply{isSelected=false;text="Sound"};refresh()
+  link.stop(true);resetSticks();dismissSheet();mazePanel?.pause();refresh()
   try{
    startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{
     addCategory(Intent.CATEGORY_OPENABLE);type="image/*";addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -343,10 +324,10 @@ class GoActivity:Activity(){
   updateDialog=d;updateMessage=message
  }
  @Deprecated("Platform back callback")
- override fun onBackPressed(){if(testing){link.disconnect();testing=false;render()}else super.onBackPressed()}
+ override fun onBackPressed(){if(testing){leaveTest()}else super.onBackPressed()}
  override fun onConfigurationChanged(config:Configuration){super.onConfigurationChanged(config);link.stop(true);render()}
- override fun onResume(){super.onResume();course?.resume();if(responseDirty){responseDirty=false;render()};if(::link.isInitialized)link.foreground(true);if(::updater.isInitialized)updater.resumePendingInstall()}
+ override fun onResume(){super.onResume();mazePanel?.resume();if(responseDirty){responseDirty=false;render()};if(::link.isInitialized)link.foreground(true);if(::updater.isInitialized)updater.resumePendingInstall()}
  override fun onWindowFocusChanged(hasFocus:Boolean){super.onWindowFocusChanged(hasFocus);if(hasFocus&&::updater.isInitialized)updater.resumePendingInstall()}
- override fun onPause(){course?.stop();music?.apply{isSelected=false;text="Sound"};if(::link.isInitialized)link.foreground(false);dismissSheet();resetSticks();super.onPause()}
- override fun onDestroy(){course?.stop();if(::link.isInitialized)link.close();if(::updater.isInitialized)updater.close();ui.removeCallbacksAndMessages(null);dismissSheet();super.onDestroy()}
+ override fun onPause(){mazePanel?.close();if(::link.isInitialized)link.foreground(false);dismissSheet();resetSticks();super.onPause()}
+ override fun onDestroy(){mazePanel?.close();if(::link.isInitialized)link.close();if(::updater.isInitialized)updater.close();ui.removeCallbacksAndMessages(null);dismissSheet();super.onDestroy()}
 }

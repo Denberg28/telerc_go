@@ -1,3 +1,9 @@
+# TeleRC Go1.0.7 — latest maze Test
+
+Replaces the older arcade game with the maze Test from released TeleRC v1.1.0rc1:
+20 levels, worlds, coins, Market cosmetics, clear times and saved progress.
+[Scope, qualification and acceptance](docs/GO_MAZE_107.md).
+
 # TeleRC Go 1.0.6 — Test game and aligned controls
 
 **Test**, immediately before **Phone connect**, opens the offline arcade rover
