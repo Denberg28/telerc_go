@@ -59,7 +59,16 @@ inline void send(uint8_t id,const uint8_t *p,uint8_t len,uint8_t extra,bool broa
   uint8_t bytes[64];
   size_t n=mini_mav::encode(bytes,txSequence++,SYSTEM_ID,COMPONENT_ID,id,p,len,extra);
   IPAddress dst=core.peer ? address(core.peer) : IPAddress(192,168,4,255);
-  if(udp.beginPacket(dst,UDP_PORT)) { udp.write(bytes,n); udp.endPacket(); }
+  uint16_t dstPort=core.peer ? core.peerPort : UDP_PORT;
+  if(udp.beginPacket(dst,dstPort)) { udp.write(bytes,n); udp.endPacket(); }
+}
+inline void ownership() {
+  // TeleRC Go capability + phone ownership in NAMED_VALUE_INT (252).
+  // v = phone owner(1) | capable(2048); armed is reported by HEARTBEAT.
+  if(!core.peer) return;
+  uint8_t p[18]={}; mini_mav::put16(p+4,2049);
+  memcpy(p+8,"TELERC_OWN",10);
+  send(252,p,18,44);
 }
 inline void ack(uint16_t command,uint8_t result) {
   uint8_t p[3]; mini_mav::put16(p,command); p[2]=result; send(77,p,3,143);
@@ -79,6 +88,7 @@ inline void statusText(telerc::ArmBlock block,uint8_t result) {
 }
 inline void heartbeat(const telerc::Status &s) {
   uint8_t p[9]={};
+  p[0]=1; // Nonzero custom_mode identifies standalone TeleRC Go rover.
   p[4]=10; p[5]=0; // GROUND_ROVER / GENERIC, never impersonate ArduPilot.
   p[6]=64 | (s.armed ? 128 : 0);
   p[7]=s.fault ? 5 : (s.armed ? 4 : (s.ready ? 3 : 2)); p[8]=3;
@@ -100,14 +110,14 @@ inline void setupReply(const telerc::Status &s,uint32_t now,uint32_t request=0,c
     (unsigned long)(request?request:s.setupRequest),result?result:s.setupResult,
     s.mode,(unsigned)s.calibrated,s.store,(unsigned)s.verified,(unsigned)s.testDone,
     s.angle,s.rate,block,s.calStage,s.reason,s.gyroBias,TEST_PWM);
-  if(n>0 && size_t(n)<sizeof(bytes) && core.peer && udp.beginPacket(address(core.peer),UDP_PORT)) {
+  if(n>0 && size_t(n)<sizeof(bytes) && core.peer && udp.beginPacket(address(core.peer),core.peerPort)) {
     udp.write(reinterpret_cast<const uint8_t *>(bytes),size_t(n));udp.endPacket();
   }
 }
 inline bool setupReceive(const uint8_t *bytes,size_t n,uint32_t ip,uint16_t port,uint32_t now,const telerc::Status &s) {
   if(n<sizeof(balance_admin::PREFIX)-1 || memcmp(bytes,balance_admin::PREFIX,sizeof(balance_admin::PREFIX)-1)) return false;
   balance_admin::Request r;
-  if(port!=UDP_PORT || !core.peer || ip!=core.peer || !balance_admin::parse(bytes,n,r)) {++core.rejected;return true;}
+  if(!core.peer || port!=core.peerPort || ip!=core.peer || !balance_admin::parse(bytes,n,r)) {++core.rejected;return true;}
   core.peerAt=now; // Setup keeps pairing alive, but NEVER refreshes RC motion.
   if(setupPeer!=core.peer){setupLease.reset();setupPeer=core.peer;}
   if(r.stop) {
@@ -188,6 +198,7 @@ inline void task(void *) {
         receive(now,s); // At most one <=256 byte / <=4 frame datagram per tick.
         if(uint32_t(now-lastHeartbeat)>=250) heartbeat(s);
         if(core.peer && uint32_t(now-lastAttitude)>=100) attitude(s);
+        if(core.peer && uint32_t(now-lastHeartbeat)<5) ownership();
       } else {
         // Frozen control task: never advertise a fresh healthy heartbeat or accept ARM.
         core.inhibit();

@@ -65,6 +65,7 @@ int main() {
   Core unbound;check(!unbound.claim(0xC0A80402,14550,driveOnly,0));
   check(!c.claim(0xC0A80403,14550,driveOnly,0));
   check(!c.claim(0xC0A80402,14551,driveOnly,0));
+  check(c.peerPort==14550);
   c.apply(rc(1,1500,1900),0,status);check(!c.input.fresh&&!c.input.motion);
   check(c.apply(command(true),0,status).result==2);
   center(c,status);
@@ -83,13 +84,15 @@ int main() {
   c.watchdog(1510,false);check(!c.peer&&!c.input.linked);
 
   Core a;bind(a);a.apply(rc(0),10,status);
-  auto reply=a.apply(command(true,200),11,status);
+  check(a.apply(command(true),10,status).result==2); // Neutral dwell mandatory.
+  center(a,status,11);
+  auto reply=a.apply(command(true,200),312,status);
   check(reply.ack&&reply.result==5&&a.input.armToken==1);
-  a.apply(command(true,201),51,status);a.apply(command(true,202),91,status);
-  check(a.input.armToken==1&&a.input.armAt==11); // Retries never extend request age.
-  a.armFinished(100);check(a.apply(command(true),120,status).result==2);
-  a.watchdog(701,true);a.apply(rc(0),702,status);
-  check(a.apply(command(true),703,status).result==5&&a.input.armToken==2);
+  a.apply(command(true,201),352,status);a.apply(command(true,202),392,status);
+  check(a.input.armToken==1&&a.input.armAt==312); // Retries never extend request age.
+  a.armFinished(400);check(a.apply(command(true),420,status).result==2);
+  a.watchdog(1001,true);center(a,status,1100);
+  check(a.apply(command(true),1403,status).result==5&&a.input.armToken==2);
   a.apply(command(false),704,status);check(a.input.disarmToken==1&&!a.input.fresh&&!a.input.armPending);
   Packet forced=command(true);float force=21196;memcpy(forced.message.payload+4,&force,4);
   check(a.apply(forced,710,status).result==2);
@@ -100,6 +103,11 @@ int main() {
   a.apply(rc(4,0,0),802,status);check(!a.input.fresh&&!a.input.motion);
   Packet bye;bye.kind=Kind::DISCONNECT;a.apply(bye,803,status);check(!a.peer);
 
+  Core dynamic; Datagram probe;probe.count=1;probe.packets[0].kind=Kind::DISCOVER;
+  check(dynamic.claim(0xC0A80405,54321,probe,10));
+  check(dynamic.peerPort==54321);
+  check(!dynamic.claim(0xC0A80405,54322,probe,12));
+  dynamic.losePeer();check(dynamic.peerPort==0);
   Core wrap;bind(wrap,0xffffff00);center(wrap,status,0xffffff00);
   wrap.apply(rc(250),50,status);wrap.movingSequence=250;wrap.sequenceKnown=true;
   wrap.apply(rc(2,1500,1700),60,status);check(wrap.input.drive==1700);
