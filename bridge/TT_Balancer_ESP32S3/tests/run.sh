@@ -34,4 +34,6 @@ ASAN_OPTIONS=detect_leaks=0 "$build_dir/network-tests"
 # This does NOT substitute for an actual ESP32 board build.
 g++ -x c++ -std=c++17 -Wall -Wextra -Werror -fsyntax-only \
   -DCONFIG_IDF_TARGET_ESP32S3=1 -Istubs ../TT_Balancer_ESP32S3.ino
+g++ -std=c++17 -Wall -Wextra -Werror -Istubs sbrb_controller_tests.cpp -o "$build_dir/sbrb-tests"
+"$build_dir/sbrb-tests"
 printf 'Production branches: host syntax check PASS\n'

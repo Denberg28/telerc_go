@@ -35,6 +35,7 @@ static_assert(BALANCER_IMU_MOUNT==0 || BALANCER_IMU_MOUNT==1, "Choose IMU mount 
 constexpr float KP = 18.0f;  // PWM / degree. Starting values, not tuned gains.
 constexpr float KI = 0.0f;   // PWM / (degree * second). Start at zero.
 constexpr float KD = 0.70f;  // PWM / (degree / second).
+constexpr float GYRO_RATE_TAU = 0.012f; // Low-pass gyro D term (~13 Hz), independent of angle filter.
 constexpr float TRIM_DEG = 0.0f; // Positive trim requests a forward lean.
 constexpr float INTEGRAL_LIMIT = 25.0f; // PWM contribution, anti-windup.
 constexpr int MAX_PWM = 160; // 0..255. Initial bench cap, not current limiting.
