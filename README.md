@@ -1,3 +1,19 @@
+# TeleRC Go 1.0.8 — transparent joystick dials
+
+Controls and offline Test now show translucent steering and drive dials.
+A cyan position light follows the local command. The neutral ring and disabled
+dash are visually distinct. Loss of the controlling touch returns the axis to
+neutral and requires a new touch.
+
+[Download signed APK](https://github.com/Denberg28/telerc_go/releases/download/go-v1.0.8/TeleRC-Go-v1.0.8.apk) ·
+[GitHub prerelease](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.8) ·
+[Phone acceptance](docs/GO_JOYSTICKS_108.md).
+
+Install manually over Go 1.0.7 with the retained production signer and increasing
+version code 1004. No firmware reflash is needed. Build, lint, 219 JVM tests,
+18 packaging checks, full cloud sanitizers and native rendering, pointer loss,
+maze and gallery checks passed. Actual phone and rover checks remain pending.
+
 # TeleRC Go 1.0.7 — latest maze Test
 
 **Test** now opens the maze from released TeleRC v1.1.0rc1, matching the supplied
