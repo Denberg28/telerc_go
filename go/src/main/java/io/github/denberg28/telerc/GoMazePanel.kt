@@ -122,7 +122,7 @@ internal class GoMazePanel(private val activity:GoActivity,private val session:G
                 addView(feedback,LayoutParams(-1,dp((32*maxOf(1f,resources.configuration.fontScale)).toInt())))
             }
             addView(caption,LayoutParams(-1,-2))
-            val joystick=JoystickView(activity,vertical){value->
+            val joystick=JoystickView(activity,vertical,translucent=true){value->
                 if(vertical)practice.drive(value)else practice.steering(value)
                 feedback.text="$hint · $value"
             }

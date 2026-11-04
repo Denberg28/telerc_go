@@ -1,3 +1,38 @@
+# Translucent Go joystick dials
+
+Baseline: Go 1.0.7 / 1003, `8c177175ce3185adc792c369828862f91cae9a6c`.
+Product source: `de760fbd2e3c9c09ef931fe7270ae90268ea8916`.
+The Go joystick view is shared by live Controls and offline Test. Its position
+light follows the local CH1 or CH2 request after deadband, sensitivity and expo.
+A hollow center ring denotes enabled neutral, a muted dash denotes disabled, and
+a filled light denotes a non-neutral request. Existing touch geometry, channel
+mapping, spring return and authority checks apply. The light represents a
+request, with vehicle and connection status shown by the existing status panel.
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| A — source and build | PASS | Go debug and unsigned release builds and lint, instrumentation APK build, and full TeleRC debug build and lint. |
+| B — behavior | PASS — JVM | 57 Go and 162 full TeleRC unit tests. The new native joystick checks are compiled. |
+| C — regression | PASS with limitation | Shared/motor source sync, bridge host tests, 18 packaging checks and ASan/UBSan with leak detection disabled. The sandbox blocks LeakSanitizer's `/proc` access. |
+| D — integration | BLOCKED | The API 35 software emulator did not reach boot completion. Native Controls and Test rendering still require a completed run. |
+| E — phone and rover | BLOCKED | No physical phone/rover available |
+| F — preview packaging | PASS | Separate debug-signed Candidate, package suffix `.candidate`, code 1003. Signature, ZIP alignment and archive integrity verified. |
+
+Candidate APK SHA-256:
+`1f634ebf49978ce62d59f3b8ef6dffee97035f984de62cf5d47c257d707efcfd`.
+Next native check: run `scripts/check-go-wallpaper-ui.sh` on a booted API 35
+emulator. Its Test mode verifies dial transparency, direction, partial travel,
+neutral after release/cancel and the disabled state on both axes.
+
+Phone acceptance: install the separate Candidate alongside Go. In Test, start
+practice and check both dials against bright and dark wallpapers. Move both axes
+through center and their endpoints. Release each stick and open Settings while a
+stick is held. Verify the light follows its channel, returns to neutral on
+release, and clears when input is disabled. With wheels raised and an independent
+cutoff available, repeat at low speed on a configured rover and verify neutral
+on release and the disabled indication after control is revoked. Remove the
+Candidate to roll back the preview. Revert this change to roll back source.
+
 # Published Go1.0.7 maze Test
 
 A/B/C/D/F software/delivery PASS; E actual phone/HIL remains BLOCKED.

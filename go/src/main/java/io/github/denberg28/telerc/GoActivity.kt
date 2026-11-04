@@ -133,7 +133,7 @@ class GoActivity:Activity(){
    }
    if(vertical)driveLabel=label else steerLabel=label
    addView(label,LinearLayout.LayoutParams(-1,dp(28)))
-   val joystick=JoystickView(this@GoActivity,vertical){value->
+   val joystick=JoystickView(this@GoActivity,vertical,translucent=true){value->
     if(vertical)drive=value else steer=value
     link.axes(steer,drive)
     refreshLabels()
