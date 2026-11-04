@@ -1,3 +1,9 @@
+## TeleRC Go 1.0.8 — transparent joystick dials
+
+- Give Controls and Test translucent joystick dials with single-axis scales and a position light that follows the local channel request.
+- Show distinct neutral and disabled markers over both light and dark wallpapers.
+- Return to neutral if Android loses the controlling pointer. A new touch is required to take control again.
+
 ## Go1.0.7 — 29 October 2026
 
 - Replace old arcade Test with released TeleRC maze practice matching the owner screenshot.

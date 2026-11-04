@@ -2,8 +2,12 @@ package io.github.denberg28.telerc
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import io.github.denberg28.telerc.go.BuildConfig
@@ -71,8 +75,8 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyUpdater(a:GoActivity){
   val candidate=File(targetContext.filesDir,"update-candidate.apk");check(candidate.isFile)
   val digest=GoApkVerifier.hash(candidate)
-  check(GoApkVerifier.verify(a,candidate,digest,"1.0.8")){"Newer same-package/signer APK rejected"}
-  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.8")){"Wrong hash accepted"}
+  check(GoApkVerifier.verify(a,candidate,digest,"1.0.9")){"Newer same-package/signer APK rejected"}
+  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.9")){"Wrong hash accepted"}
   check(!GoApkVerifier.verify(a,candidate,digest,"9.9.9")){"Wrong version accepted"}
   val current=File(a.applicationInfo.sourceDir);check(!GoApkVerifier.verify(a,current,GoApkVerifier.hash(current))){"Same-code APK accepted"}
   val other=File(targetContext.filesDir,"update-wrong-package.apk");check(!GoApkVerifier.verify(a,other,GoApkVerifier.hash(other))){"Full TeleRC APK accepted"}
@@ -81,15 +85,15 @@ class GoInstrumentation:Instrumentation(){
   val messages=java.util.Collections.synchronizedList(mutableListOf<String>())
   val fake=GoUpdater(a,{messages.add(it)},{value,_->offered.set(value)},{url->
    calls.add(url)
-   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.8"},{"ref":"refs/tags/go-v1.0.9"}]"""
+   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.9"},{"ref":"refs/tags/go-v1.0.10"}]"""
    else {
-    val v=if(url.endsWith("1.0.9"))"1.0.9" else "1.0.8"
-    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.9"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
+    val v=if(url.endsWith("1.0.10"))"1.0.10" else "1.0.9"
+    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.10"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
    }
   })
   main{fake.check()}
   try{waitFor{offered.get()!=null||messages.any{it!="Checking for updates…"}}}catch(t:Throwable){error("Update callback timed out: calls=$calls messages=$messages finishing=${a.isFinishing} destroyed=${a.isDestroyed} fixtureBytes=${candidate.length()}")}
-  check(offered.get()?.version=="1.0.8"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
+  check(offered.get()?.version=="1.0.9"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
   check(calls.none{it.endsWith("releases/latest")||it.endsWith("v9.9.9")});main{fake.close()}
  }
  private fun await(a:GoActivity,phase:String,test:()->Boolean){try{waitFor(test)}catch(t:Throwable){error("$phase: ${a.link.snapshot()}")}}
@@ -153,6 +157,69 @@ class GoInstrumentation:Instrumentation(){
   waitForIdleSync();a=launch()
   check(!ThemeImageStore.exists(targetContext))
   main{check((wallpaper(a).drawable as android.graphics.drawable.BitmapDrawable).bitmap.width!=320);a.finish()}
+ }
+ private fun verifyJoystickDisplay()=main{
+  for(vertical in listOf(false,true)){
+   var output=1500
+   val stick=JoystickView(targetContext,vertical,translucent=true){output=it}
+   stick.layout(0,0,240,240)
+   val bitmap=Bitmap.createBitmap(240,240,Bitmap.Config.ARGB_8888)
+   try{
+    fun pixel(x:Int,y:Int):Int{
+     bitmap.eraseColor(Color.TRANSPARENT)
+     stick.draw(Canvas(bitmap))
+     return bitmap.getPixel(x,y)
+    }
+    fun touch(action:Int,x:Float,y:Float,pointerId:Int=0):Boolean{
+     val time=SystemClock.uptimeMillis()
+     val pointer=MotionEvent.PointerProperties().apply{id=pointerId;toolType=MotionEvent.TOOL_TYPE_FINGER}
+     val coords=MotionEvent.PointerCoords().apply{this.x=x;this.y=y;pressure=1f;size=1f}
+     val event=MotionEvent.obtain(time,time,action,1,arrayOf(pointer),arrayOf(coords),0,0,1f,1f,0,0,0,0)
+     return try{stick.dispatchTouchEvent(event)}finally{event.recycle()}
+    }
+    fun checkCenter(){
+     check(output==1500&&Color.red(pixel(120,120))<50){"Neutral ring did not return to center"}
+     check((126..129).any{Color.red(pixel(it,120))>210}){"Neutral ring was missing"}
+    }
+    fun checkLight(positive:Boolean){
+     check(if(positive)output>1500 else output<1500)
+     val offset=((output-1500)/400f*96f*.62f).toInt()
+     val light=if(vertical)pixel(120,120-offset)else pixel(120+offset,120)
+     check(light==0xFF8DEBFF.toInt()){"Light did not follow the local channel request"}
+    }
+    val dialAlpha=Color.alpha(pixel(155,155))
+    check(dialAlpha in 1..80){"Joystick dial obscured the wallpaper"}
+    check(pixel(120,120)==0xFFADBCCB.toInt()){"Disabled dash was missing"}
+    check(!touch(MotionEvent.ACTION_DOWN,220f,20f)&&output==1500)
+    stick.isEnabled=true
+    checkCenter()
+    check(touch(MotionEvent.ACTION_DOWN,if(vertical)120f else 220f,if(vertical)20f else 120f))
+    checkLight(positive=true)
+    val fullOutput=output
+    check(touch(MotionEvent.ACTION_MOVE,if(vertical)120f else 150f,if(vertical)90f else 120f))
+    checkLight(positive=true)
+    check(output<fullOutput){"Intermediate position did not reduce the request"}
+    check(touch(MotionEvent.ACTION_MOVE,if(vertical)120f else 20f,if(vertical)220f else 120f))
+    checkLight(positive=false)
+    touch(MotionEvent.ACTION_CANCEL,120f,120f)
+    checkCenter()
+    touch(MotionEvent.ACTION_DOWN,if(vertical)120f else 220f,if(vertical)20f else 120f)
+    checkLight(positive=true)
+    touch(MotionEvent.ACTION_MOVE,220f,20f,pointerId=1)
+    checkCenter() // Losing the controlling pointer must release the last command.
+    touch(MotionEvent.ACTION_MOVE,220f,20f)
+    checkCenter() // A late move cannot reacquire the joystick.
+    touch(MotionEvent.ACTION_DOWN,if(vertical)220f else 120f,if(vertical)120f else 20f)
+    checkCenter() // Motion on the unassigned axis stays neutral.
+    touch(MotionEvent.ACTION_MOVE,if(vertical)120f else 220f,if(vertical)20f else 120f)
+    checkLight(positive=true)
+    touch(MotionEvent.ACTION_UP,120f,120f)
+    checkCenter()
+    touch(MotionEvent.ACTION_DOWN,if(vertical)120f else 220f,if(vertical)20f else 120f)
+    stick.isEnabled=false
+    check(output==1500&&pixel(120,120)==0xFFADBCCB.toInt()){"Disable did not clear the active light"}
+   }finally{bitmap.recycle()}
+  }
  }
  private fun verifyTestGame(){
   fun launch()=(startActivitySync(Intent(targetContext,GoActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as GoActivity).also{imageReady(it);waitForIdleSync()}
@@ -246,7 +313,7 @@ class GoInstrumentation:Instrumentation(){
  }
  override fun onStart(){try{
   if(testOnly){
-   try{verifyTestGame()}finally{
+   try{verifyJoystickDisplay();verifyTestGame()}finally{
     for(command in listOf("settings put system font_scale 1.0","wm size reset","wm density reset"))android.os.ParcelFileDescriptor.AutoCloseInputStream(uiAutomation.executeShellCommand(command)).use{it.readBytes()}
    }
    finish(Activity.RESULT_OK,Bundle().apply{putString("stream","PASS: offline maze Test, levels/Market/coins/cosmetics/clear times, progress persistence, failure restart, transport isolation and symmetric captions")});return
