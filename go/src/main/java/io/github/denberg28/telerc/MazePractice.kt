@@ -173,7 +173,8 @@ internal class MazePractice(val maze: MazeLayout, coinSlots: List<Int> = emptyLi
         if (state != State.RUNNING || milliseconds <= 0) return false
         elapsedMillis = (elapsedMillis + milliseconds.coerceAtMost(86_400_000L)).coerceAtMost(86_400_000L)
         val dt = milliseconds.coerceAtMost(50L)/1000f
-        val next = roverStep(pose,steer,drive,dt)
+        // axis() already removes the receiver neutral window.
+        val next = roverStep(pose,steer,drive,dt,inputDeadband=0f)
         val x = pose.x + (next.x-pose.x)*4f
         val y = pose.y + (next.y-pose.y)*4f
         // Resolve each axis separately so a glancing wall contact can slide along the passage.

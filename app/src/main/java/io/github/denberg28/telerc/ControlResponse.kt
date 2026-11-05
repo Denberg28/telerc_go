@@ -6,13 +6,16 @@ internal data class ControlResponse(
     val drivePercent: Int = 100,
     val expoPercent: Int = 0
 ) {
-    fun channel(position: StickPosition, vertical: Boolean): Int = stickChannel(
+    fun channel(position: StickPosition, vertical: Boolean, receiverDeadbandUs: Int = 0): Int = stickChannel(
         position, vertical,
         (if (vertical) drivePercent else steeringPercent).coerceIn(25, 100) / 100f,
-        expoPercent.coerceIn(0, 100) / 100f
+        expoPercent.coerceIn(0, 100) / 100f,
+        receiverDeadbandUs
     )
 
     companion object {
+        // Covers the 25 µs mini-rover and 35 µs hybrid receiver neutral windows.
+        const val GO_RECEIVER_DEADBAND_US = 35
         const val STEERING_KEY = "steering_sensitivity"
         const val DRIVE_KEY = "drive_sensitivity"
         const val EXPO_KEY = "control_expo"
