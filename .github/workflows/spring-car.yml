@@ -1,0 +1,29 @@
+name: Spring steering car firmware
+on:
+  pull_request:
+    paths: ['bridge/TeleRC_Go_SpringCar/**', 'bridge/spring_car_tests/**', 'scripts/build-spring-car.sh', '.github/workflows/spring-car.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host and sanitizer regressions
+        run: |
+          bridge/spring_car_tests/run.sh
+          SANITIZE=1 bridge/spring_car_tests/run.sh
+          python3 bridge/sync_motor_core.py --check
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: '1.3.1'
+      - name: Pinned ESP32-S3 build
+        run: |
+          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32@3.3.2 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          scripts/build-spring-car.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpringCar-ESP32S3-build-only
+          path: spring-car-build/

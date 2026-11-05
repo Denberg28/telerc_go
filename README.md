@@ -1,3 +1,18 @@
+# TeleRC Go — two motor firmware stacks
+
+Build separate ESP32-S3/MX1508 packages for **four drive motors** or **rear drive +
+front spring steering**. Existing TeleRC Go is retained. [Layout selection, wiring,
+calibration and build instructions](docs/FIRMWARE_STACKS.md). Both use a regulated
+5 V motor rail from the 2S pack; choose the package matching your wiring.
+
+# Spring steering car firmware — bench candidate
+
+Separate rear-drive/front-steering ESP32-S3 firmware for two MX1508 boards and a
+centering spring. Existing TeleRC Go is retained. Regulated 5 V motor rail from
+the 2S pack; estimated timed steering, electrical brake, active return and saved
+travel/return calibration. No measured position lock is claimed.
+[Wiring, installation, tuning and restrained-wheel checks](docs/SPRING_CAR.md).
+
 # TeleRC Go 1.0.11 — joystick line alignment
 
 The position light follows finger travel along the visible axis line.

@@ -1,3 +1,86 @@
+# Paired motor firmware stacks — 0.3.0-rc1
+
+Baseline main `a20eac1e05c6422258d3fc11f1659e39a00fc91c`; SpringCar development
+`1e32e5c45e5033cad6627d04f0622b7b05172f79`. New dedicated 4WD source is extracted
+from the checked-in matched Go 1.2.4 archive, with command sequence ordering,
+loop watchdog and attachment-mask-independent fault detachment. No app change.
+
+The first combined Android gate stopped at `:app:packageRelease` because this
+firmware workflow has no production signing key. A workflow-only Gradle init
+script sets the full-app release variant to unsigned for compile/lint validation;
+normal product signing and all app sources remain unchanged. Firmware publication
+still waits for the complete corrected Android gate and both target builds.
+
+| Gate | Status before cloud run | Required/observed evidence |
+| --- | --- | --- |
+| A build | Firmware locally build verified; final cloud pending | Actual 4WD ESP32-S3 core 3.3.2 build and retained SpringCar build. New pipeline compiles both exact checkouts; Android debug/release lint/build required before publication. |
+| B behavior | PASS — host tested | 4WD forward/reverse/mixing/pivots and all four motors; eight PWM legs, partial attaches, active/idle drift, mask corruption, loop-watchdog fault and duplicate/backward frames. SpringCar timed travel/brake/return and calibration tests retained. |
+| C regression | Local ASan/UBSan PASS with leak restriction; full cloud pending | New pipeline requires full default sanitizers for both stacks and legacy bridge, sync checks and packaging regressions. Local LeakSanitizer is blocked by /proc access. |
+| D protocol/package | PASS — host tested; native integration pending | Ownership/nonce/source-port/ARM/timeout tests; distinct pin/layout manifests, exact image addresses, full member hashes and corrupt/missing/mislabeled archive rejection. |
+| E hardware | BLOCKED — not hardware tested/field validated | Execute the raised-wheel procedures in FIRMWARE_STACKS.md and SPRING_CAR.md, including actual SpringCar brake drift and four separate travel times. |
+| F delivery | Pending successful gated workflow | Publish two separate self-contained ZIPs/checksums as a prerelease after A–D software checks pass. Source commit is recorded in each manifest. No stable qualification. |
+
+Acceptance: the four-motor stack must not be used with drive/steering wiring;
+SpringCar must stop repeated motion at an estimated target, release/return without
+steering-duration disarm, and retain calibrated timings. BOOT/disarm/loss/fault
+must coast/disarm and never automatically re-arm either layout. Rollback uses
+retained layout-matching firmware/wiring. Next: finish cloud verification, then
+measure actual power/current/stop/steering behavior on each physical layout.
+
+# SpringCar 0.2.0 — estimated timed steering and recalibration
+
+Supersedes the 0.1.0 steering-duration disarm described below. Baseline source
+`0f32e37c45946603b6e8856c220655c7d23718f0`; same isolated firmware branch.
+No Android app changes. Timed movement/estimated target, electrical braking,
+calibrated active return and spring center reset replace indefinite steering PWM.
+The mechanism has only two motor wires: no angle measurement or static lock is
+claimed. A braked motor can still be back-driven by the spring.
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| A source/target | PASS — reviewed/build verified for firmware; Android BLOCKED | ESP32-S3 compiled using CLI 1.3.1 / core 3.3.2: 897599 bytes program, 45688 bytes globals. Actual image identifies ESP32-S3, DIO, 4 MB. Android debug/release/lint/JVM command retried; Gradle download remains blocked by network access. |
+| B behavior | PASS — host tested | Both LEDC API branches: finite movement to six estimated targets, repeated 120 s held target with zero rotation demand and brake retained, reduction/reversal, separate outward/return times, active return followed by coast, no steering-hold disarm. Timing is a software-model result, not actual wheel-position accuracy. |
+| C regression | PASS with sanitizer limitation | New sketch host/ASan/UBSan, full bridge host/ASan/UBSan, source sync and release packaging regressions. Leak detection disabled for the previously demonstrated sandbox /proc restriction; full LeakSanitizer remains BLOCKED. |
+| D protocol/calibration | PASS — host integration; phone BLOCKED | Existing ownership/nonce/source-port/CRC/ARM/timeout/fault/BOOT tests retained. New tests exercise brake release on disarm/timeout, calibration parse bounds, malformed/oversized serial input, disarmed-only activation, save/load/corruption/write failure, millis wrap and 20000 decoder probes per API branch. |
+| E hardware/field | BLOCKED — not hardware tested/field validated | Actual current, travel timing, spring back-drive under brake, powered-return overshoot, reset latency and heating need restrained-wheel validation. Follow SPRING_CAR.md. |
+| F package | PASS — local development artifact verified | Exact-source manifest, four separate images, source/tests, checksum-checked flash helper and archive checks. No public/stable publication. Android, leak and hardware qualification gaps remain open. |
+
+Calibration: disarm; `CAL leftOut rightOut leftBack rightBack` over USB serial
+115200 baud (50–1200 ms each). Checked NVS record persists across reboots.
+`CENTER` or holding BOOT for two seconds then releasing lets the spring establish
+an assumed center reference. Calibration never performs an automatic sweep and
+cannot be accepted while ARMED. A normal steering hold does not disarm.
+
+Next: flash with motor leads disconnected, verify 5 V rail/LOW fault outputs,
+then tune the four timings with short low-load trials and check actual brake
+holding and center return. If it drifts under the spring, add position feedback.
+
+# SpringCar 0.1.0 — 6 November 2026
+
+Baseline `a20eac1e05c6422258d3fc11f1659e39a00fc91c`, isolated branch
+`firmware/spring-steer-car-v0.1.0`. Firmware-only scope: new standalone sketch,
+host fault suite, build workflow and wiring/acceptance guide. Android sources,
+versions, signing and existing sketches remain unchanged.
+
+| Gate | Status | Observed evidence |
+| --- | --- | --- |
+| A source/target build | PASS — reviewed/build verified for firmware; Android rebuild BLOCKED | Actual ESP32-S3, Arduino-ESP32 3.3.2, CLI 1.3.1; 894195 bytes program, 45584 bytes globals. Full Android debug/release/lint/JVM command attempted; Gradle distribution fetch failed with network unreachable, including proxy-configured retry. No APK change. |
+| B behavior | PASS — host tested | Both LEDC API branches: independent drive/steer, monotonic symmetric scaling, neutral coast, slew, reverse dead time, 1500 ms steering stop, neutral recovery, repeated-reversal/brief-neutral guard bypass attempts and millis wrap. |
+| C regression | PASS with stated sanitizer limit — host tested | Full bridge host suite; shared/motor sync; existing mini host tests; 18 release packaging regressions. SpringCar, full bridge and mini ASan/UBSan pass with leak detection disabled. Default LeakSanitizer FAILED due sandbox /proc task access, not a reported memory defect. Full leak checking remains BLOCKED. |
+| D integration | PASS for host protocol contract; actual phone integration BLOCKED | Entire actual sketch compiled/exercised against fake Wi-Fi/PWM: boot nonce, exact Go ownership/capability/CRC shape, source-port locking, neutral ARM, release/disarm, command/station loss, BOOT, whole-datagram rejection, valid-CRC duplicate/backward frames, ARM replay, PWM/write/readback/attachment faults, watchdog setup/reset failures, serial backpressure; 20000 random parser probes per API branch. No physical network or native phone test claimed. |
+| E hardware/field | BLOCKED — not hardware tested/field validated | No actual board, motors, spring, drivers, buck or phone available. Measure current, rail dips, centering, output-off/boot watchdog timing and temperature using SPRING_CAR.md. |
+| F package | PASS — local development package verified | Exact-source manifest, source/tests, four separate flash images, checksums, verified ZIP and digest-checked flash helper. Public/stable publication is not performed; Android rebuild, full leak checks and hardware gates remain open. |
+
+A fault-injection test exposed incomplete shutdown if the PWM attachment mask
+was inconsistent: the new sketch now detaches every configured motor GPIO on a
+latched fault, independently of that mask. Fault and neutral release paths bypass
+slew; a settled zero remains available for LEDC readback checks. Original sketches
+are not changed.
+
+Next concrete check: flash the candidate with motor leads disconnected; verify
+LOW inputs on boot/reset and the 5 V motor rail, then execute restrained-wheel
+steps 1–8 in [SPRING_CAR.md](SPRING_CAR.md). Do not promote as stable/field-ready.
+
 # Published Go 1.0.11 — line travel alignment
 
 Source and tag `e3133251d55802bc3a1d6e6dbd4eac32208d6c58`. [PR 15](https://github.com/Denberg28/telerc_go/pull/15)
