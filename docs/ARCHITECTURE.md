@@ -1,3 +1,24 @@
+# Paired Go motor stacks
+
+The dedicated `TeleRC_Go_4WD` and `TeleRC_Go_SpringCar` sketches preserve the Go
+Wi-Fi ownership/boot/ARM contract but produce different motor layouts. The build
+pipeline compiles and packages them separately. New 4WD firmware adds ordered
+command filtering and loop watchdog to the matched archived Go foundation;
+original legacy/skid/FC/gateway sketches remain unchanged. See FIRMWARE_STACKS.md.
+
+# SpringCar standalone firmware
+
+`bridge/TeleRC_Go_SpringCar` retains the matched Go Wi-Fi ownership/boot contract,
+with CH1 front spring-return steering and CH2 rear drive on independent MX1508
+channels. A 5 ms motor task bounds drive slew/reversal coast and integrates an estimated
+steering position from applied PWM and calibrated left/right/out/return times.
+Steering moves to an estimated target, electrically brakes, then tracks back on
+release and coasts for spring reference. Calibration is disarmed-only USB serial
+with one checked NVS record; BOOT stop/release re-establishes the spring reference.
+Fresh centered RC and explicit ARM remain required; faults do not auto-resume.
+The separate sketch does not alter other motor/gateway/FC architectures.
+See [contract, wiring and limitations](SPRING_CAR.md).
+
 # Go maze practice
 
 GoActivity owns one GoMazeSession across view rebuilds; GoMazePanel has no link

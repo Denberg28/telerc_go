@@ -1,3 +1,26 @@
+# Go motor firmware stacks 0.3.0-rc1
+
+- Add dedicated Go 4WD 1.3.0 source with four motors/eight PWM legs, matched ownership protocol, sequence filtering and task watchdog.
+- Package SpringCar 0.2.0 separately with estimated steering/brake/return and persistent recalibration.
+- Add clean pinned dual-target builds, independent layout/flash manifests, checksums, flash helper and gated GitHub prerelease pipeline.
+- Retain the existing app. Actual motor/power/steering qualification remains pending.
+
+# SpringCar 0.2.0 — estimated steering with recalibration
+
+- Map joystick percentage to an estimated position using finite timed movements, then apply electrical braking instead of continued rotation PWM.
+- On release, run a calibrated return movement and coast for the centering spring; do not disarm merely for holding steering.
+- Add separate left/right outward/return timing calibration, saved in checked NVS, plus USB CENTER and BOOT/release center reset.
+- Keep TeleRC Go unchanged, independent rear drive, command/BOOT/PWM/watchdog fault stops and explicit ARM recovery.
+- Two-wire control has no angle measurement or static position lock; bench calibration and physical hold/return validation remain pending.
+
+# SpringCar 0.1.0 bench candidate
+
+- Add separate ESP32-S3 firmware: rear DC drive, front DC steering with centering spring.
+- Retain current Go protocol, source-port ownership, boot identifier and explicit neutral ARM.
+- Independent motor output, neutral coast, slew/reversal protection, timed steering lockout, duplicate/backward packet rejection and loop watchdog.
+- Add fault-injection/parser tests, pinned target build, wiring and restrained-wheel checks.
+- No Android application changes; hardware qualification is pending.
+
 ## TeleRC Go 1.0.11 — joystick line alignment
 
 - Align the position light with finger travel along the visible axis line at every sensitivity setting.

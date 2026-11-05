@@ -1,3 +1,14 @@
+# SpringCar 0.2.0 bench candidate
+
+Hardware current/temperature, back-drivable spring centering, 2S power conversion,
+phone integration and watchdog reset latency remain unmeasured. No position,
+current or battery-voltage feedback. Timed travel is an estimate and can drift
+with voltage/load/friction. Electrical braking only resists movement and cannot
+provide a static position lock against the spring. Four travel times and spring
+recalibration require actual mechanical/thermal qualification. Existing Android app is unchanged;
+full Android rebuild and LeakSanitizer are blocked in this environment.
+See [acceptance and recovery](SPRING_CAR.md).
+
 # Published Go 1.0.5 prerelease
 
 [Final signed release result](RELEASE_RESULT_GO_105.md): production APK, same
