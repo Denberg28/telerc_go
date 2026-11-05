@@ -31,6 +31,7 @@ class JoystickView(
     }
     private fun dp(value: Float) = value * resources.displayMetrics.density
     private fun radius() = min(width * 0.40f, height * 0.44f).coerceAtLeast(1f)
+    /** Center to the visible line endpoint, used for drawing and touch input. */
     private fun travel(radius: Float) = radius * 0.62f
 
     override fun onDraw(canvas: Canvas) {
@@ -89,8 +90,10 @@ class JoystickView(
         paint.strokeWidth = dp(1f)
         drawScale(canvas, travel, radius)
 
-        // Display the local channel request after deadband, expo and sensitivity.
-        val offset = if (active) (channel - 1500) / 400f * travel else 0f
+        // The line is the touch travel scale. Sensitivity changes the command,
+        // while the marker follows the finger from center to the line endpoint.
+        val axis = if (vertical) -position.y else position.x
+        val offset = if (isEnabled) axis * travel else 0f
         val marker = radius * 0.075f
         if (active) {
             paint.color = 0xD08DEBFF.toInt()
@@ -110,7 +113,7 @@ class JoystickView(
                 paint.color = Color.WHITE
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = dp(1.5f)
-                canvas.drawCircle(0f, 0f, marker, paint)
+                canvas.drawCircle(offset, 0f, marker, paint)
             }
             else -> {
                 paint.color = 0xFFADBCCB.toInt()

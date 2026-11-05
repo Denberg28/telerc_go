@@ -75,8 +75,8 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyUpdater(a:GoActivity){
   val candidate=File(targetContext.filesDir,"update-candidate.apk");check(candidate.isFile)
   val digest=GoApkVerifier.hash(candidate)
-  check(GoApkVerifier.verify(a,candidate,digest,"1.0.11")){"Newer same-package/signer APK rejected"}
-  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.11")){"Wrong hash accepted"}
+  check(GoApkVerifier.verify(a,candidate,digest,"1.0.12")){"Newer same-package/signer APK rejected"}
+  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.12")){"Wrong hash accepted"}
   check(!GoApkVerifier.verify(a,candidate,digest,"9.9.9")){"Wrong version accepted"}
   val current=File(a.applicationInfo.sourceDir);check(!GoApkVerifier.verify(a,current,GoApkVerifier.hash(current))){"Same-code APK accepted"}
   val other=File(targetContext.filesDir,"update-wrong-package.apk");check(!GoApkVerifier.verify(a,other,GoApkVerifier.hash(other))){"Full TeleRC APK accepted"}
@@ -85,15 +85,15 @@ class GoInstrumentation:Instrumentation(){
   val messages=java.util.Collections.synchronizedList(mutableListOf<String>())
   val fake=GoUpdater(a,{messages.add(it)},{value,_->offered.set(value)},{url->
    calls.add(url)
-   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.11"},{"ref":"refs/tags/go-v1.0.12"}]"""
+   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.12"},{"ref":"refs/tags/go-v1.0.13"}]"""
    else {
-    val v=if(url.endsWith("1.0.12"))"1.0.12" else "1.0.11"
-    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.12"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
+    val v=if(url.endsWith("1.0.13"))"1.0.13" else "1.0.12"
+    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.13"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
    }
   })
   main{fake.check()}
   try{waitFor{offered.get()!=null||messages.any{it!="Checking for updates…"}}}catch(t:Throwable){error("Update callback timed out: calls=$calls messages=$messages finishing=${a.isFinishing} destroyed=${a.isDestroyed} fixtureBytes=${candidate.length()}")}
-  check(offered.get()?.version=="1.0.11"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
+  check(offered.get()?.version=="1.0.12"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
   check(calls.none{it.endsWith("releases/latest")||it.endsWith("v9.9.9")});main{fake.close()}
  }
  private fun await(a:GoActivity,phase:String,test:()->Boolean){try{waitFor(test)}catch(t:Throwable){error("$phase: ${a.link.snapshot()}")}}
@@ -181,9 +181,9 @@ class GoInstrumentation:Instrumentation(){
      check(output==1500&&Color.red(pixel(120,120))<50){"Neutral ring did not return to center"}
      check((126..129).any{Color.red(pixel(it,120))>210}){"Neutral ring was missing"}
     }
-    fun checkLight(positive:Boolean){
+    fun checkLight(positive:Boolean,travelPixels:Float=96f*.62f){
      check(if(positive)output>1500 else output<1500)
-     val offset=((output-1500)/400f*96f*.62f).toInt()
+     val offset=(if(positive)travelPixels else -travelPixels).toInt()
      val light=if(vertical)pixel(120,120-offset)else pixel(120+offset,120)
      check(light==0xFF8DEBFF.toInt()){"Light did not follow the local channel request"}
     }
@@ -197,7 +197,7 @@ class GoInstrumentation:Instrumentation(){
     checkLight(positive=true)
     val fullOutput=output
     check(touch(MotionEvent.ACTION_MOVE,if(vertical)120f else 150f,if(vertical)90f else 120f))
-    checkLight(positive=true)
+    checkLight(positive=true,travelPixels=30f)
     check(output<fullOutput){"Intermediate position did not reduce the request"}
     check(touch(MotionEvent.ACTION_MOVE,if(vertical)120f else 20f,if(vertical)220f else 120f))
     checkLight(positive=false)
@@ -228,8 +228,12 @@ class GoInstrumentation:Instrumentation(){
     ControlResponseStore.save(targetContext,ControlResponse(gain,gain,expo))
     for(vertical in listOf(false,true)){
      var output=1500
+     var practice=MazePractice(MazeLevels.layout(1)).apply{start()}
      val stick=JoystickView(targetContext,vertical,translucent=true,
-      receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US){output=it}
+      receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US){value->
+       output=value
+       if(vertical)practice.drive(value)else practice.steering(value)
+      }
      stick.layout(0,0,240,240);stick.isEnabled=true
      fun touch(action:Int,axis:Float,offAxis:Float=0f){
       val travel=96f*.62f
@@ -246,6 +250,25 @@ class GoInstrumentation:Instrumentation(){
      check(low in 36 until gain*4){"Low-range touch lost at $gain% / expo $expo"}
      touch(MotionEvent.ACTION_MOVE,-.12f)
      check(output==1500-low){"Forward/reverse response is unbalanced"}
+     for(fraction in listOf(.25f,.5f,.75f,1f))for(direction in listOf(-1f,1f)){
+      practice=MazePractice(MazeLevels.layout(1)).apply{start()}
+      val heading=practice.pose.heading
+      val point=fraction*direction
+      touch(MotionEvent.ACTION_MOVE,point)
+      check((output-1500)*direction>35){"Line position $point did not register"}
+      if(fraction==1f)check(output==1500+(direction*gain*4).toInt()){"Line end did not produce full selected range"}
+      val bitmap=Bitmap.createBitmap(240,240,Bitmap.Config.ARGB_8888)
+      try{
+       stick.draw(Canvas(bitmap))
+       val offset=point*96f*.62f
+       val x=if(vertical)120 else (120f+offset).toInt()
+       val y=if(vertical)(120f-offset).toInt()else 120
+       check(bitmap.getPixel(x,y)==0xFF8DEBFF.toInt()){"Marker does not match line position $point at $gain%"}
+      }finally{bitmap.recycle()}
+      practice.advance(20)
+      if(vertical)check(practice.pose.speed*direction>0f){"Drive did not move at line position $point"}
+      else check((practice.pose.heading-heading)*direction>0f){"Steering did not turn at line position $point"}
+     }
      touch(MotionEvent.ACTION_MOVE,1f,5f)
      check(output==1500+gain*4){"Finger drift reduced the assigned axis range"}
      touch(MotionEvent.ACTION_CANCEL,0f)

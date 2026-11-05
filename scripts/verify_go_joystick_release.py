@@ -11,7 +11,7 @@ import zipfile
 
 TOOLS = Path(os.environ["ANDROID_HOME"]) / "build-tools/35.0.0"
 SIGNER = "5e57bd9bb3d10d97e5abdad4c51dbf5282708db73f1844fac272403952f9f5ec"
-BASELINE_SHA = "27da5bb29fad79e377d9bbb90441eae299c562fba83361d5f009cd7b9ec1f033"
+BASELINE_SHA = "35676a84c704d712e6745cc21146b0bfae2c3c02e06a0d40bf4b97615806dd23"
 
 
 def run(*args):
@@ -30,8 +30,8 @@ apk, baseline = map(Path, sys.argv[1:])
 assert hashlib.sha256(baseline.read_bytes()).hexdigest() == BASELINE_SHA
 package, signers = identity(apk)
 previous, previous_signers = identity(baseline)
-assert package == ("io.github.denberg28.telerc.go", "1006", "1.0.10"), package
-assert previous == ("io.github.denberg28.telerc.go", "1005", "1.0.9"), previous
+assert package == ("io.github.denberg28.telerc.go", "1007", "1.0.11"), package
+assert previous == ("io.github.denberg28.telerc.go", "1006", "1.0.10"), previous
 assert signers == previous_signers == [SIGNER]
 run(TOOLS / "zipalign", "-c", "-P", "16", "4", apk)
 permissions = run(TOOLS / "aapt", "dump", "permissions", apk)
@@ -53,4 +53,4 @@ metadata = dict(source_commit=os.environ["GO_SOURCE"], package=package[0], versi
                 version_code=int(package[1]), upgrade_from=previous[2], signer_sha256=signers,
                 sha256=hashlib.sha256(apk.read_bytes()).hexdigest(), tests=counts)
 (apk.parent / "APK_VERIFICATION.json").write_text(json.dumps(metadata, indent=2) + "\n")
-print("PASS: production Go 1.0.10/code1006, exact baseline/signer, permissions, alignment/ZIP and 64 tests")
+print("PASS: production Go 1.0.11/code1007, exact baseline/signer, permissions, alignment/ZIP and 64 tests")
