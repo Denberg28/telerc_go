@@ -107,24 +107,17 @@ internal class GoMazePanel(private val activity:GoActivity,private val session:G
         levels.setOnLongClickListener{chooseLevel();true}
         levels.contentDescription="Choose an unlocked level; after clearing advance to the next level"
         fun stick(vertical:Boolean)=LinearLayout(activity).apply{
-            orientation=VERTICAL;setPadding(dp(4),dp(8),dp(4),dp(8))
-            val title=label(if(vertical)"DRIVE"else"STEER",13f).apply{
-                tag=if(vertical)"go-drive-label"else"go-steer-label";setTypeface(typeface,Typeface.BOLD)
+            orientation=VERTICAL;setPadding(0,dp(8),0,dp(8))
+            val caption=label(if(vertical)"DRIVE"else"STEER",13f).apply{
+                tag=if(vertical)"go-drive-label"else"go-steer-label"
+                setTypeface(typeface,Typeface.BOLD)
+                background=surface()
+                minHeight=dp(30);maxLines=1
+                setPadding(dp(4),dp(4),dp(4),dp(4))
             }
-            val hint=if(vertical)"CH2 · forward / reverse"else"CH1 · left / right"
-            val feedback=label("$hint · 1500",11f).apply{
-                setTextColor(AppColors.muted(activity));minLines=2;maxLines=2
-                setAutoSizeTextTypeUniformWithConfiguration(9,11,1,android.util.TypedValue.COMPLEX_UNIT_SP)
-            }
-            val caption=LinearLayout(activity).apply{
-                orientation=VERTICAL;background=surface();setPadding(dp(4),dp(4),dp(4),dp(4))
-                addView(title,LayoutParams(-1,dp(22)))
-                addView(feedback,LayoutParams(-1,dp((32*maxOf(1f,resources.configuration.fontScale)).toInt())))
-            }
-            addView(caption,LayoutParams(-1,-2))
+            addView(caption,LayoutParams(-1,-2).apply{leftMargin=dp(4);rightMargin=dp(4)})
             val joystick=JoystickView(activity,vertical,translucent=true){value->
                 if(vertical)practice.drive(value)else practice.steering(value)
-                feedback.text="$hint · $value"
             }
             if(vertical)drive=joystick else steering=joystick
             addView(joystick,LayoutParams(-1,0,1f).apply{topMargin=dp(8)})

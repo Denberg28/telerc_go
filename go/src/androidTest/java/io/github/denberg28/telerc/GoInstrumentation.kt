@@ -75,8 +75,8 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyUpdater(a:GoActivity){
   val candidate=File(targetContext.filesDir,"update-candidate.apk");check(candidate.isFile)
   val digest=GoApkVerifier.hash(candidate)
-  check(GoApkVerifier.verify(a,candidate,digest,"1.0.9")){"Newer same-package/signer APK rejected"}
-  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.9")){"Wrong hash accepted"}
+  check(GoApkVerifier.verify(a,candidate,digest,"1.0.10")){"Newer same-package/signer APK rejected"}
+  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.10")){"Wrong hash accepted"}
   check(!GoApkVerifier.verify(a,candidate,digest,"9.9.9")){"Wrong version accepted"}
   val current=File(a.applicationInfo.sourceDir);check(!GoApkVerifier.verify(a,current,GoApkVerifier.hash(current))){"Same-code APK accepted"}
   val other=File(targetContext.filesDir,"update-wrong-package.apk");check(!GoApkVerifier.verify(a,other,GoApkVerifier.hash(other))){"Full TeleRC APK accepted"}
@@ -85,15 +85,15 @@ class GoInstrumentation:Instrumentation(){
   val messages=java.util.Collections.synchronizedList(mutableListOf<String>())
   val fake=GoUpdater(a,{messages.add(it)},{value,_->offered.set(value)},{url->
    calls.add(url)
-   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.9"},{"ref":"refs/tags/go-v1.0.10"}]"""
+   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.10"},{"ref":"refs/tags/go-v1.0.11"}]"""
    else {
-    val v=if(url.endsWith("1.0.10"))"1.0.10" else "1.0.9"
-    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.10"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
+    val v=if(url.endsWith("1.0.11"))"1.0.11" else "1.0.10"
+    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.11"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
    }
   })
   main{fake.check()}
   try{waitFor{offered.get()!=null||messages.any{it!="Checking for updates…"}}}catch(t:Throwable){error("Update callback timed out: calls=$calls messages=$messages finishing=${a.isFinishing} destroyed=${a.isDestroyed} fixtureBytes=${candidate.length()}")}
-  check(offered.get()?.version=="1.0.9"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
+  check(offered.get()?.version=="1.0.10"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
   check(calls.none{it.endsWith("releases/latest")||it.endsWith("v9.9.9")});main{fake.close()}
  }
  private fun await(a:GoActivity,phase:String,test:()->Boolean){try{waitFor(test)}catch(t:Throwable){error("$phase: ${a.link.snapshot()}")}}
@@ -237,9 +237,17 @@ class GoInstrumentation:Instrumentation(){
    fun symmetry(){
     fun rect(v:View)=android.graphics.Rect().also{check(v.getGlobalVisibleRect(it)&&it.width()>=v.width-1&&it.height()>=v.height-1)}
     val views=all(a.window.decorView)
-    val l=rect(views.first{it.tag=="go-steer-label"});val r=rect(views.first{it.tag=="go-drive-label"})
+    val steerLabel=views.first{it.tag=="go-steer-label"}
+    val driveLabel=views.first{it.tag=="go-drive-label"}
+    val l=rect(steerLabel);val r=rect(driveLabel)
     val sticks=views.filterIsInstance<JoystickView>();check(sticks.size==2)
     val ls=rect(sticks[0]);val rs=rect(sticks[1])
+    for((caption,expected,stick) in listOf(Triple(steerLabel,"STEER",sticks[0]),Triple(driveLabel,"DRIVE",sticks[1]))){
+     val column=caption.parent as View
+     val labels=all(column).filterIsInstance<android.widget.TextView>()
+     check(labels.map{it.text.toString()}==listOf(expected)){"Unexpected joystick captions"}
+     check(stick.parent===column&&stick.width==column.width){"Joystick does not use the full column"}
+    }
     check(l.top==r.top&&l.height()==r.height()&&ls.top==rs.top&&ls.height()==rs.height()){"Asymmetric maze captions/sticks"}
     check(kotlin.math.abs(l.centerX()-ls.centerX())<=1&&kotlin.math.abs(r.centerX()-rs.centerX())<=1)
    }

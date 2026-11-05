@@ -3,7 +3,7 @@ android {
  namespace = "io.github.denberg28.telerc.go"
  compileSdk = 35
  buildFeatures { buildConfig = true }
- defaultConfig { applicationId = "io.github.denberg28.telerc.go"; minSdk = 26; targetSdk = 35; versionCode = if (providers.gradleProperty("goUpdateFixture").orNull == "true") 1005 else 1004; versionName = if (providers.gradleProperty("goUpdateFixture").orNull == "true") "1.0.9" else "1.0.8"; testInstrumentationRunner = "io.github.denberg28.telerc.GoInstrumentation" }
+ defaultConfig { applicationId = "io.github.denberg28.telerc.go"; minSdk = 26; targetSdk = 35; versionCode = if (providers.gradleProperty("goUpdateFixture").orNull == "true") 1006 else 1005; versionName = if (providers.gradleProperty("goUpdateFixture").orNull == "true") "1.0.10" else "1.0.9"; testInstrumentationRunner = "io.github.denberg28.telerc.GoInstrumentation" }
  sourceSets.getByName("main").res.srcDir("../app/src/main/res")
  defaultConfig { manifestPlaceholders["goLabel"] = "TeleRC Go" }
  signingConfigs { create("releaseKey") {

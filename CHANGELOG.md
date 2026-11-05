@@ -1,3 +1,7 @@
+## TeleRC Go 1.0.9 — cleaner Test controls
+
+- Show only STEER and DRIVE above the larger transparent dials in offline Test.
+
 ## TeleRC Go 1.0.8 — transparent joystick dials
 
 - Give Controls and Test translucent joystick dials with single-axis scales and a position light that follows the local channel request.
