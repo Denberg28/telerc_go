@@ -1,3 +1,28 @@
+# Published Go 1.0.11 — line travel alignment
+
+Source and tag `e3133251d55802bc3a1d6e6dbd4eac32208d6c58`. [PR 15](https://github.com/Denberg28/telerc_go/pull/15)
+merged into main. APK SHA-256
+`f938cb9f3bd7b182fcf56fdd3f59002f2df2a7905dba8e53df296058412ab2a8`.
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| A source/build | PASS — build verified | Go debug/release and full-app debug build/lint, shared source parity. |
+| B behavior | PASS — software tested | 64 Go and 169 full-app JVM tests. |
+| C regression | PASS — cloud verified | Full host sanitizers and 18 packaging checks. No firmware target affected. |
+| D integration | PASS — emulator tested | Actual tick-coordinate touches verify marker alignment, command output and Test movement at 25/50/75/100% line travel in both directions, sensitivity 25/50/100% and expo extremes. Existing maze/gallery/layout checks also passed. |
+| E phone/HIL | BLOCKED — hardware pending | Follow the [line response and restrained-wheel procedure](GO_LINE_TRAVEL_111.md). |
+| F delivery | PASS — signed prerelease | Retained signer, code 1007 > 1006, exact source, upgrade identity and all 11 hosted asset digests verified. |
+
+[Cloud checks](https://github.com/Denberg28/telerc_go/actions/runs/42045855237) ·
+[Signing](https://github.com/Denberg28/TeleRC/actions/runs/42045972051) ·
+[Publication](https://github.com/Denberg28/telerc_go/actions/runs/42046815753).
+
+An additional host check used the included mini receiver core. The half-line
+commands at 25/50/100% sensitivity produced positive motor PWM in forward,
+negative PWM in reverse and opposite signs for pivot steering. This establishes
+receiver registration. Physical starting torque and motor friction need device
+measurement.
+
 # Published Go 1.0.10 — low-range response
 
 Source and tag `c5374528b76a11528e06bb4849903f8ce3a0d880`. [PR 14](https://github.com/Denberg28/telerc_go/pull/14)

@@ -1,3 +1,19 @@
+# TeleRC Go 1.0.11 — joystick line alignment
+
+The position light follows finger travel along the visible axis line.
+Halfway from center is half stick travel, and each line endpoint is full travel
+at every sensitivity setting. Sensitivity controls command magnitude.
+
+[Download signed APK](https://github.com/Denberg28/telerc_go/releases/download/go-v1.0.11/TeleRC-Go-v1.0.11.apk) ·
+[GitHub prerelease](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.11) ·
+[Line response and phone acceptance](docs/GO_LINE_TRAVEL_111.md).
+
+Native checks verified marker position, commands and Test movement at 25/50/75%
+and full line travel across both axes, directions and sensitivity settings.
+Android builds, lint, JVM tests and cloud sanitizers passed. The retained signer
+and version code 1007 support a manual upgrade over Go 1.0.10. Physical motor
+starting duty and phone installation remain hardware acceptance items.
+
 # TeleRC Go 1.0.10 — low-range joystick response
 
 Go now responds to small movements beyond center across independent Steering
