@@ -17,10 +17,10 @@ internal fun gameX(x: Float, steering: Float, dt: Float): Float =
     (x + steering.coerceIn(-1f, 1f) * dt.coerceIn(0f, .05f) * .38f).coerceIn(.245f, .755f)
 
 internal fun roverStep(pose: RoverPose, steering: Float, drive: Float, dt: Float,
-                       maxYawRateDegrees: Float = 220f): RoverPose {
+                       maxYawRateDegrees: Float = 220f, inputDeadband: Float = .08f): RoverPose {
     val step = dt.coerceIn(0f, .05f)
-    val steer = steering.takeIf { abs(it) >= .08f }?.coerceIn(-1f, 1f) ?: 0f
-    val throttle = drive.takeIf { abs(it) >= .08f }?.coerceIn(-1f, 1f) ?: 0f
+    val steer = steering.takeIf { abs(it) >= inputDeadband }?.coerceIn(-1f, 1f) ?: 0f
+    val throttle = drive.takeIf { abs(it) >= inputDeadband }?.coerceIn(-1f, 1f) ?: 0f
     val leftDemand = throttle + steer
     val rightDemand = throttle - steer
     val scale = max(1f, max(abs(leftDemand), abs(rightDemand)))

@@ -13,6 +13,7 @@ class JoystickView(
     context: Context,
     private val vertical: Boolean,
     private val translucent: Boolean = false,
+    private val receiverDeadbandUs: Int = 0,
     private val changed: (Int) -> Unit
 ) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND }
@@ -132,8 +133,9 @@ class JoystickView(
 
     private fun input(x: Float, y: Float) {
         val travel = travel(radius())
-        position = limitStick((x - width / 2f) / travel, (y - height / 2f) / travel)
-        channel = response.channel(position, vertical)
+        position = limitStick((x - width / 2f) / travel, (y - height / 2f) / travel,
+            if (receiverDeadbandUs > 0) vertical else null)
+        channel = response.channel(position, vertical, receiverDeadbandUs)
         changed(channel); invalidate()
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {

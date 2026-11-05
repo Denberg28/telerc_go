@@ -1,3 +1,9 @@
+## TeleRC Go 1.0.10 — low-range response
+
+- Coordinate joystick response with independent steering and drive sensitivity across the usable receiver range.
+- Keep the assigned axis independent of sideways finger drift and balance forward/reverse command rounding.
+- Remove the extra motion dead zone in maze practice.
+
 ## TeleRC Go 1.0.9 — cleaner Test controls
 
 - Show only STEER and DRIVE above the larger transparent dials in offline Test.

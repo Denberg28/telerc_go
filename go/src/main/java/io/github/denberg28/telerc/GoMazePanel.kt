@@ -116,7 +116,7 @@ internal class GoMazePanel(private val activity:GoActivity,private val session:G
                 setPadding(dp(4),dp(4),dp(4),dp(4))
             }
             addView(caption,LayoutParams(-1,-2).apply{leftMargin=dp(4);rightMargin=dp(4)})
-            val joystick=JoystickView(activity,vertical,translucent=true){value->
+            val joystick=JoystickView(activity,vertical,translucent=true,receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US){value->
                 if(vertical)practice.drive(value)else practice.steering(value)
             }
             if(vertical)drive=joystick else steering=joystick
