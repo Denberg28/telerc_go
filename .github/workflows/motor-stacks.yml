@@ -38,7 +38,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"'
       - name: Unchanged app regression, debug/release lint/build
-        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:lintRelease :app:assembleDebug :app:assembleRelease :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleRelease --no-daemon
+        run: ./gradlew --init-script scripts/ci-unsigned-app-release.gradle :app:testDebugUnitTest :app:lintDebug :app:lintRelease :app:assembleDebug :app:assembleRelease :go:testDebugUnitTest :go:lintDebug :go:lintRelease :go:assembleDebug :go:assembleRelease --no-daemon
   build:
     needs: [host, android]
     runs-on: ubuntu-latest

@@ -5,6 +5,12 @@ Baseline main `a20eac1e05c6422258d3fc11f1659e39a00fc91c`; SpringCar development
 from the checked-in matched Go 1.2.4 archive, with command sequence ordering,
 loop watchdog and attachment-mask-independent fault detachment. No app change.
 
+The first combined Android gate stopped at `:app:packageRelease` because this
+firmware workflow has no production signing key. A workflow-only Gradle init
+script sets the full-app release variant to unsigned for compile/lint validation;
+normal product signing and all app sources remain unchanged. Firmware publication
+still waits for the complete corrected Android gate and both target builds.
+
 | Gate | Status before cloud run | Required/observed evidence |
 | --- | --- | --- |
 | A build | Firmware locally build verified; final cloud pending | Actual 4WD ESP32-S3 core 3.3.2 build and retained SpringCar build. New pipeline compiles both exact checkouts; Android debug/release lint/build required before publication. |

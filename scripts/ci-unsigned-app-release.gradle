@@ -1,0 +1,11 @@
+// Firmware CI only: compile/lint the existing full app without a production key.
+// This init script is passed explicitly; ordinary release/signing is unchanged.
+gradle.beforeProject { project ->
+    project.pluginManager.withPlugin('com.android.application') {
+        if (project.path == ':app') {
+            project.extensions.getByName('androidComponents').finalizeDsl { android ->
+                android.buildTypes.getByName('release').signingConfig = null
+            }
+        }
+    }
+}
