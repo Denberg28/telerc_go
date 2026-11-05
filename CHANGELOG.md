@@ -1,3 +1,8 @@
+## TeleRC Go 1.0.11 — joystick line alignment
+
+- Align the position light with finger travel along the visible axis line at every sensitivity setting.
+- Verify actual Test movement at quarter, half, three-quarter and full line positions in both directions.
+
 ## TeleRC Go 1.0.10 — low-range response
 
 - Coordinate joystick response with independent steering and drive sensitivity across the usable receiver range.
