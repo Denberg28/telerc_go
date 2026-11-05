@@ -1,3 +1,10 @@
+# Download the verified motor firmware stacks
+
+[4WD + drive/steering firmware prerelease](https://github.com/Denberg28/telerc_go/releases/tag/go-firmware-stacks-v0.3.0-rc1) ·
+[Results, checksums and physical acceptance](docs/FIRMWARE_STACKS_RESULT.md).
+Both actual ESP32-S3 builds, full cloud sanitizers, app regression and archive
+checks passed. Physical power/motor/steering qualification remains pending.
+
 # TeleRC Go — two motor firmware stacks
 
 Build separate ESP32-S3/MX1508 packages for **four drive motors** or **rear drive +

@@ -1,3 +1,12 @@
+# Published motor stacks — final software verification
+
+Released source `d5975e17dc1e59c8d4ac13d0fbf92f5b778055af`: gates A/B/C/D/F
+PASS for the documented software/build/package scope; E physical hardware/field
+BLOCKED. Both layouts were compiled; full cloud sanitizers, Android regression,
+native UI checks and downloaded asset digests passed.
+[Final results, hashes and next hardware check](FIRMWARE_STACKS_RESULT.md)
+supersede the pre-cloud status below. No application update is required.
+
 # Paired motor firmware stacks — 0.3.0-rc1
 
 Baseline main `a20eac1e05c6422258d3fc11f1659e39a00fc91c`; SpringCar development
