@@ -1,3 +1,15 @@
+# TeleRC Go 1.0.9 — cleaner Test controls
+
+Offline Test shows only STEER and DRIVE above larger translucent dials.
+[Download signed APK](https://github.com/Denberg28/telerc_go/releases/download/go-v1.0.9/TeleRC-Go-v1.0.9.apk) ·
+[GitHub prerelease](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.9) ·
+[Phone acceptance](docs/GO_TEST_DIALS_109.md).
+
+Install manually over Go 1.0.8. The production signing certificate matches and
+the version code increases to 1005. Android build, lint, JVM tests, host
+sanitizers and native Test and gallery checks passed. Physical phone and
+restrained-wheel acceptance are pending.
+
 # TeleRC Go 1.0.8 — transparent joystick dials
 
 Controls and offline Test now show translucent steering and drive dials.

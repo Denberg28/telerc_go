@@ -1,3 +1,22 @@
+# Published Go 1.0.9 — cleaner Test controls
+
+Source and tag `7e57557333b09730988b69e7546e25aa3a38ccd2`.
+[PR 13](https://github.com/Denberg28/telerc_go/pull/13) merged into main.
+APK SHA-256 `27da5bb29fad79e377d9bbb90441eae299c562fba83361d5f009cd7b9ec1f033`.
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| A source/build | PASS — build verified | Android debug/release builds and lint, shared core parity. |
+| B behavior | PASS — software tested | Go and full TeleRC JVM suites. |
+| C regression | PASS — cloud verified | Host tests and full sanitizers, 18 packaging checks. No ESP32 target affected. |
+| D integration | PASS — emulator tested | API 35 gallery and maze workflows, caption-only layout and full-width dials at normal and large text sizes, joystick rendering and pointer-loss checks. |
+| E phone/HIL | BLOCKED — hardware pending | Follow the [phone and restrained-wheel acceptance procedure](GO_TEST_DIALS_109.md). |
+| F delivery | PASS — signed prerelease | Retained production signer, code 1005 > 1004, exact source and all 11 hosted asset digests verified. |
+
+[Cloud checks](https://github.com/Denberg28/telerc_go/actions/runs/41967732326) ·
+[Signing](https://github.com/Denberg28/TeleRC/actions/runs/41967751217) ·
+[Publication](https://github.com/Denberg28/telerc_go/actions/runs/41968228768).
+
 # Published Go 1.0.8 — translucent joystick dials
 
 [Prerelease and checksums](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.8).
