@@ -1,3 +1,19 @@
+# TeleRC Go 1.0.10 — low-range joystick response
+
+Go now responds to small movements beyond center across independent Steering
+and Drive sensitivity settings. Both directions use symmetric command rounding,
+sideways finger drift keeps the assigned axis range, and Test applies its
+receiver dead zone once.
+
+[Download signed APK](https://github.com/Denberg28/telerc_go/releases/download/go-v1.0.10/TeleRC-Go-v1.0.10.apk) ·
+[GitHub prerelease](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.10) ·
+[Response details and phone acceptance](docs/GO_RESPONSE_110.md).
+
+Install manually over Go 1.0.9. The production signer matches and the version
+code increases to 1006. Android builds, lint, 233 JVM tests, full host sanitizers,
+packaging and native low-range touch checks passed. Physical motor response and
+phone installation remain hardware acceptance items.
+
 # TeleRC Go 1.0.9 — cleaner Test controls
 
 Offline Test shows only STEER and DRIVE above larger translucent dials.

@@ -1,3 +1,22 @@
+# Published Go 1.0.10 — low-range response
+
+Source and tag `c5374528b76a11528e06bb4849903f8ce3a0d880`. [PR 14](https://github.com/Denberg28/telerc_go/pull/14)
+merged into main. APK SHA-256
+`35676a84c704d712e6745cc21146b0bfae2c3c02e06a0d40bf4b97615806dd23`.
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| A source/build | PASS — build verified | Go debug/release and full-app debug build/lint, shared source parity. |
+| B behavior | PASS — software tested | 64 Go and 169 full-app JVM tests, including low-range movement, axis independence, symmetry and sensitivity limits. |
+| C regression | PASS — cloud verified | Full host sanitizers, 18 packaging tests and core sync. No firmware target affected. |
+| D integration | PASS — emulator tested | Native 25/50/100% touch input in both directions, low-range expo, neutral/release, sideways drift, existing maze/gallery/layout checks. |
+| E phone/HIL | BLOCKED — hardware pending | Run the [low-range phone and restrained-wheel procedure](GO_RESPONSE_110.md). |
+| F delivery | PASS — signed prerelease | Retained signer, code 1006 > 1005, exact source, upgrade identity and all 11 hosted asset digests verified. |
+
+[Cloud checks](https://github.com/Denberg28/telerc_go/actions/runs/41984121822) ·
+[Signing](https://github.com/Denberg28/TeleRC/actions/runs/41984183094) ·
+[Publication](https://github.com/Denberg28/telerc_go/actions/runs/41984771247).
+
 # Published Go 1.0.9 — cleaner Test controls
 
 Source and tag `7e57557333b09730988b69e7546e25aa3a38ccd2`.
