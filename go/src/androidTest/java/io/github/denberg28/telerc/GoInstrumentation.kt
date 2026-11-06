@@ -257,7 +257,9 @@ class GoInstrumentation:Instrumentation(){
       val point=fraction*direction
       touch(MotionEvent.ACTION_MOVE,point)
       check((output-1500)*direction>35){"Line position $point did not register"}
-      if(fraction==1f)check(output==1500+(direction*(35+(365f*gain/100).roundToInt())).toInt()){"Line end did not produce full selected range"}
+      // Pixel-to-axis Float rounding can cross a half-microsecond rounding tie.
+      // The response contract allows one PWM quantization step, not lost travel.
+      if(fraction==1f)check(kotlin.math.abs(output-(1500+(direction*(35+(365f*gain/100).roundToInt())).toInt()))<=1){"Line end mismatch: $output at $gain% / $direction"}
       val bitmap=Bitmap.createBitmap(240,240,Bitmap.Config.ARGB_8888)
       try{
        stick.draw(Canvas(bitmap))
@@ -274,7 +276,7 @@ class GoInstrumentation:Instrumentation(){
       else check((practice.pose.heading-heading)*direction>0f){"Steering did not turn at line position $point"}
      }
      touch(MotionEvent.ACTION_MOVE,1f,5f)
-     check(output==1500+35+(365f*gain/100).roundToInt()){"Finger drift reduced the assigned axis range"}
+     check(kotlin.math.abs(output-(1500+35+(365f*gain/100).roundToInt()))<=1){"Finger drift reduced the assigned axis range: $output at $gain%"}
      touch(MotionEvent.ACTION_CANCEL,0f)
      check(output==1500){"Release did not return to neutral"}
     }
