@@ -8,7 +8,7 @@ permissions:
   actions: read
 concurrency:
   group: go-v1.0.12-publication-final
-  cancel-in-progress: false
+  cancel-in-progress: true
 env:
   GO_SOURCE: 93d9a0cbcab27a86e662f842e85cd0096de1f907
   GO_CHECK_RUN: '42210956522'
@@ -91,6 +91,8 @@ jobs:
           import hashlib,json,os
           from pathlib import Path
           out=Path('release-dist')
+          guide=Path('docs/GO_PROPORTIONAL_112.md').read_text().split('## Verification record')[0]
+          guide+='## Release verification\n\n'.replace('\\n','\n')
           notes='''# TeleRC Go 1.0.12 — stable release
           
           Joystick line percentages now request proportional usable control strength
@@ -125,6 +127,7 @@ jobs:
           archive Candidate labels and hardware_validated=false remain accurate.
           Follow TEST_GUIDE.md and the restrained-wheel procedures before normal use.
           '''
+          (out/'TEST_GUIDE.md').write_text(guide+'\n\n## Verified release results\n\n'+notes)
           (out/'RELEASE_NOTES.md').write_text(notes)
           status=dict(version='1.0.12',version_code=1008,channel='stable',owner_authorized=True,source_commit=os.environ['GO_SOURCE'],hardware_validated=False,android_native_run=int(os.environ['GO_CHECK_RUN']),signing_run=int(os.environ['SIGN_RUN']),firmware_build_run=int(os.environ['FIRMWARE_RUN']),publication_run=int(os.environ['GITHUB_RUN_ID']))
           (out/'RELEASE_STATUS.json').write_text(json.dumps(status,indent=2)+'\n')
