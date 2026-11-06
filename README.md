@@ -1,10 +1,16 @@
-# TeleRC Go 1.0.12 — proportional control candidate
+# TeleRC Go 1.0.12 — stable proportional controls + firmware
 
-Go applies sensitivity to usable receiver demand, keeps line percentages linear,
-and removes extra Test acceleration lag. Live control cadence is 20 ms.
-[Response contract, verification and phone checks](docs/GO_PROPORTIONAL_112.md).
-64 Go JVM tests and host regressions pass. Android/native verification and
-public push remain blocked; physical rover acceptance remains pending.
+[Download signed APK](https://github.com/Denberg28/telerc_go/releases/download/go-v1.0.12/TeleRC-Go-v1.0.12.apk)
+· [Latest stable release and both firmware packages](https://github.com/Denberg28/telerc_go/releases/tag/go-v1.0.12)
+· [Verified results, checksums and installation](docs/RELEASE_RESULT_GO_112.md).
+
+Proportional joystick line response, independent Steer/Drive sensitivity, direct
+next-frame Test motion and 20 ms live RC cadence. Includes Arduino IDE sketches
+and actual ESP32-S3 binaries for four-motor 4WD and two-motor drive/steering layouts.
+Same production signer, code 1008; install over existing Go without uninstalling.
+68 Go tests, Android build/lint, native UI, full sanitizers and both target builds
+passed. Stable channel selected by the owner; physical phone/rover acceptance
+remains untested. Firmware bench-candidate labels are retained.
 
 # Download the verified motor firmware stacks
 

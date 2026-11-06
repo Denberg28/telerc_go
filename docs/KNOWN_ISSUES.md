@@ -1,10 +1,12 @@
-# Go 1.0.12 control verification
+# Go 1.0.12 physical qualification
 
-64 Go JVM tests and host regressions pass; Android/native verification,
-public-push approval and actual phone/rover HIL remain BLOCKED.
-The position light is touch position, not measured wheel speed or angle.
-Receiver configuration, motor start duty and firmware slew can differ from Test.
-No motor kick is added without measurement. See [acceptance](GO_PROPORTIONAL_112.md).
+[Published stable-channel results and acceptance](RELEASE_RESULT_GO_112.md).
+Software, native emulator, signer, target compilation and package checks pass.
+Physical phone upgrade and loaded motor response remain NOT TESTED. The position
+light reports touch travel, not measured wheel RPM or steering angle. Firmware
+Candidate labels and hardware_validated=false remain accurate; SpringCar has no
+position sensor. The legacy in-app update feed is unchanged; install the signed
+APK from this repository's stable release manually.
 
 # SpringCar 0.2.0 bench candidate
 

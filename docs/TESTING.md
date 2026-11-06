@@ -1,16 +1,11 @@
-# Go 1.0.12 proportional response
+# Go 1.0.12 final release verification
 
-Baseline `889a211`; branch `fix/go-proportional-joystick`.
-See [contract and executable acceptance](GO_PROPORTIONAL_112.md).
-
-| Gate | Status | Evidence |
-| --- | --- | --- |
-| A build | JVM PASS; Android BLOCKED | 64 Go JVM tests compiled with Kotlin 2.1.20/target 17 and passed. Gradle distribution unavailable; public CI push needs authorization. |
-| B behavior | PASS — host tested | 64 Go JVM tests include first-frame track magnitude within one PWM step, both axes/directions, line fractions and independent gains; release/reversal have no Test lag. |
-| C regression | PASS with sanitizer limitation | 18 release/package checks; shared/motor sync; bridge host/ASan/UBSan PASS with leak detection disabled for sandbox restriction. Full LeakSanitizer and Android app tests BLOCKED. |
-| D integration | Pending emulator | Real MotionEvent input, rendered marker and first-frame Test demand; pointer loss, pause, gallery and saved preferences. |
-| E hardware | BLOCKED | No physical phone/rover; restrained-wheel procedure in linked note. |
-| F delivery | BLOCKED by public-push approval review | Go code 1008/version 1.0.12 prepared locally. No remote branch/PR/APK/release created. Same signer required for production upgrade. |
+[Final A–F gates, producer runs, hashes and physical acceptance](RELEASE_RESULT_GO_112.md).
+Source/tag `93d9a0cbcab27a86e662f842e85cd0096de1f907`; PR 17 merged.
+A build PASS; B 68 Go JVM tests PASS; C full regression/default sanitizers PASS;
+D native API35 joystick/maze/gallery PASS; E physical phone/rover BLOCKED;
+F owner-requested stable/Latest publication PASS, with 17 assets and provenance.
+Physical qualification is not inferred from the selected release channel.
 
 # Published motor stacks — final software verification
 

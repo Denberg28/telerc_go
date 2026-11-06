@@ -69,28 +69,16 @@ prefer rebuilding the old product with a higher code and the retained signer
 rather than clearing saves. Candidate uses its own package/signature; it cannot
 upgrade the production package and has separate preferences/saves.
 
-## Verification record
+## Published verification
 
-- PASS — reviewed and host tested: all 64 Go JVM unit tests, including four new
-  magnitude/first-frame response regressions, compiled and ran with Kotlin
-  2.1.20/JVM target 17 and JUnit 4.13.2. This invokes the repository's actual
-  pure Kotlin sources directly without Gradle; it is not an Android build.
-- PASS — host tested: 18 release source/package regression checks, full bridge
-  host suite, shared-source and motor-core synchronization, whitespace checks.
-- PASS with limitation — full bridge AddressSanitizer/UndefinedBehaviorSanitizer
-  suite with leak detection disabled. Default LeakSanitizer cannot operate in
-  this sandbox (fatal ptrace/process inspection restriction); leak checking is
-  BLOCKED and remains required in CI.
-- BLOCKED — Android debug/release builds/lint and native MotionEvent/rendered
-  marker/emulator tests. The required Gradle command failed to download its
-  distribution. Direct Maven access allowed the JVM check above only.
-- BLOCKED — public branch push by automatic approval review: current request
-  did not explicitly authorize public source publication. No remote branch,
-  PR, workflow run, APK or release was created. The source and checks are
-  committed locally, ready for an authorized push and existing CI workflow.
-- BLOCKED — physical installation and restrained-wheel HIL: no device or rover
-  attached. No stable promotion or hardware reliability claim.
+The fix is merged and Go 1.0.12/code1008 is published as the owner-requested
+stable/Latest release with both matching firmware stacks. Android build/lint,
+68 Go Gradle tests, full-app/host/full sanitizers, native joystick/maze/gallery,
+retained signer and both actual ESP32-S3 builds pass. All 17 assets have provenance
+and SHA-256 inventory. Physical phone/rover HIL remains NOT TESTED.
 
-Next concrete check: authorize the public review-branch push, run the prepared
-Android/native CI, inspect actual first-frame/rendered marker evidence, then
-build and verify a same-signer APK before physical acceptance.
+[Final results, producers, checksums and installation](RELEASE_RESULT_GO_112.md).
+Earlier local build/public-push blocks were resolved after explicit publication
+authorization. The previous 64-test local check is superseded by all 68 tests
+under Gradle. Native endpoint assertions retain one PWM quantization step of
+rounding tolerance. The physical acceptance and rollback procedures above apply.
