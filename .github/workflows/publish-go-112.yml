@@ -7,52 +7,15 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: go-v1.0.12-publication-v2
+  group: go-v1.0.12-publication-final
   cancel-in-progress: false
 env:
   GO_SOURCE: 93d9a0cbcab27a86e662f842e85cd0096de1f907
   GO_CHECK_RUN: '42210956522'
-  SIGN_RUN: '42211025150'
+  SIGN_RUN: '42211210001'
+  FIRMWARE_RUN: '42211093815'
 jobs:
-  firmware:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: 93d9a0cbcab27a86e662f842e85cd0096de1f907
-          fetch-depth: 0
-      - name: Host regression and full sanitizers for both motor layouts
-        run: |
-          test "$(git rev-parse HEAD)" = "$GO_SOURCE"
-          python3 bridge/sync_motor_core.py --check
-          python3 scripts/sync-go-core.py --check
-          bridge/go_4wd_tests/run.sh
-          SANITIZE=1 bridge/go_4wd_tests/run.sh
-          bridge/spring_car_tests/run.sh
-          SANITIZE=1 bridge/spring_car_tests/run.sh
-          python3 -m unittest discover -s scripts -p 'test_*package*.py' -v
-      - uses: arduino/setup-arduino-cli@v2
-        with: {version: '1.3.1'}
-      - name: Install pinned actual-board toolchain
-        run: |
-          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-          arduino-cli core install esp32:esp32@3.3.2 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-      - name: Build both actual ESP32-S3 firmware archives
-        run: |
-          python3 scripts/build_motor_stacks.py --output "$RUNNER_TEMP/motor-stacks" --commit "$GO_SOURCE"
-          mkdir firmware-dist
-          cp "$RUNNER_TEMP/motor-stacks/"*.zip "$RUNNER_TEMP/motor-stacks/SHA256SUMS.txt" firmware-dist/
-          python3 scripts/release_safety.py firmware-dist
-          cd firmware-dist
-          sha256sum -c SHA256SUMS.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Go-1.0.12-matching-motor-firmware
-          path: firmware-dist/
-          if-no-files-found: error
   publish:
-    needs: firmware
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -72,6 +35,7 @@ jobs:
         run: |
           gh run watch "$GO_CHECK_RUN" --repo "$GITHUB_REPOSITORY" --exit-status --interval 10
           gh run watch "$SIGN_RUN" --repo Denberg28/TeleRC --exit-status --interval 10
+          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/127869624344" > "$RUNNER_TEMP/firmware-job.json"
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GO_CHECK_RUN" > "$RUNNER_TEMP/check-run.json"
           gh api "repos/Denberg28/TeleRC/actions/runs/$SIGN_RUN" > "$RUNNER_TEMP/sign-run.json"
           python3 - <<'PY'
@@ -80,12 +44,12 @@ jobs:
           checked=json.loads((Path(os.environ['RUNNER_TEMP'])/'check-run.json').read_text())
           signed=json.loads((Path(os.environ['RUNNER_TEMP'])/'sign-run.json').read_text())
           assert checked['head_sha']==os.environ['GO_SOURCE'] and checked['conclusion']=='success'
-          assert signed['head_sha']=='24d3af333748640096a3344d6f6e783f296dc595' and signed['conclusion']=='success'
+          firmware=json.loads((Path(os.environ['RUNNER_TEMP'])/'firmware-job.json').read_text())
+          assert firmware['run_id']==int(os.environ['FIRMWARE_RUN']) and firmware['conclusion']=='success'
+          assert signed['head_sha']=='668636eca05a5924353c41a7dc3251ea3a0b479f' and signed['conclusion']=='success'
           PY
-      - uses: actions/download-artifact@v4
-        with:
-          name: Go-1.0.12-matching-motor-firmware
-          path: firmware-dist
+      - name: Download exact verified firmware producer
+        run: gh run download "$FIRMWARE_RUN" --repo "$GITHUB_REPOSITORY" --name Go-1.0.12-matching-motor-firmware --dir firmware-dist
       - name: Download immutable signed APK and native evidence
         run: |
           gh run download "$SIGN_RUN" --repo Denberg28/TeleRC --name TeleRC-Go-v1.0.12-retained-signer --dir "$RUNNER_TEMP/signed"
@@ -112,7 +76,7 @@ jobs:
           source=os.environ['GO_SOURCE']
           provenance=json.loads((out/'SIGNING_PROVENANCE.json').read_text())
           assert provenance['source_commit']==source and provenance['signing_workflow_run']==int(os.environ['SIGN_RUN'])
-          assert provenance['signing_workflow_commit']=='24d3af333748640096a3344d6f6e783f296dc595'
+          assert provenance['signing_workflow_commit']=='668636eca05a5924353c41a7dc3251ea3a0b479f'
           with zipfile.ZipFile(out/'telerc_go-v1.0.12-source.zip') as z:
               assert z.read('SOURCE_COMMIT.txt').decode().strip()==source
           for p in out.glob('*Candidate.zip'): validate_archive(p,source)
@@ -150,7 +114,7 @@ jobs:
           No reflash is needed solely for this app fix. SpringCar has no position sensor;
           a fixed steering angle is not guaranteed against its centering spring.
           
-          Verified: Android debug/release build and lint, 64 Go JVM tests, full-app
+          Verified: Android debug/release build and lint, 68 Go JVM tests, full-app
           regressions, native API 35 touch/marker/maze/gallery checks, host/full
           sanitizers, archive regressions, retained APK signer/increasing code, and
           both actual ESP32-S3 builds with Arduino-ESP32 3.3.2.
@@ -162,7 +126,7 @@ jobs:
           Follow TEST_GUIDE.md and the restrained-wheel procedures before normal use.
           '''
           (out/'RELEASE_NOTES.md').write_text(notes)
-          status=dict(version='1.0.12',version_code=1008,channel='stable',owner_authorized=True,source_commit=os.environ['GO_SOURCE'],hardware_validated=False,android_native_run=int(os.environ['GO_CHECK_RUN']),signing_run=int(os.environ['SIGN_RUN']),firmware_publication_run=int(os.environ['GITHUB_RUN_ID']))
+          status=dict(version='1.0.12',version_code=1008,channel='stable',owner_authorized=True,source_commit=os.environ['GO_SOURCE'],hardware_validated=False,android_native_run=int(os.environ['GO_CHECK_RUN']),signing_run=int(os.environ['SIGN_RUN']),firmware_build_run=int(os.environ['FIRMWARE_RUN']),publication_run=int(os.environ['GITHUB_RUN_ID']))
           (out/'RELEASE_STATUS.json').write_text(json.dumps(status,indent=2)+'\n')
           (out/'BUILD_INFO.txt').write_text('TeleRC Go 1.0.12/code1008\nSource: '+os.environ['GO_SOURCE']+'\nAndroid/native: https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GO_CHECK_RUN']+'\nSigning: https://github.com/Denberg28/TeleRC/actions/runs/'+os.environ['SIGN_RUN']+'\nFirmware/publication: https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+'\nStable channel owner-selected; physical hardware qualification NOT TESTED.\n')
           (out/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in sorted(out.iterdir()) if p.is_file() and p.name!='SHA256SUMS.txt'))
