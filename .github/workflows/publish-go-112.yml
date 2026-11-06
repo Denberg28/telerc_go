@@ -7,12 +7,12 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: go-v1.0.12-publication
+  group: go-v1.0.12-publication-v2
   cancel-in-progress: false
 env:
-  GO_SOURCE: ee6bb5e8de6c7f4b2c7bfcce76d729904d1e455b
-  GO_CHECK_RUN: '42210319804'
-  SIGN_RUN: '42210613617'
+  GO_SOURCE: 93d9a0cbcab27a86e662f842e85cd0096de1f907
+  GO_CHECK_RUN: '42210956522'
+  SIGN_RUN: '42211025150'
 jobs:
   firmware:
     runs-on: ubuntu-latest
@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ee6bb5e8de6c7f4b2c7bfcce76d729904d1e455b
+          ref: 93d9a0cbcab27a86e662f842e85cd0096de1f907
           fetch-depth: 0
       - name: Host regression and full sanitizers for both motor layouts
         run: |
@@ -63,7 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ee6bb5e8de6c7f4b2c7bfcce76d729904d1e455b
+          ref: 93d9a0cbcab27a86e662f842e85cd0096de1f907
           fetch-depth: 0
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
@@ -80,7 +80,7 @@ jobs:
           checked=json.loads((Path(os.environ['RUNNER_TEMP'])/'check-run.json').read_text())
           signed=json.loads((Path(os.environ['RUNNER_TEMP'])/'sign-run.json').read_text())
           assert checked['head_sha']==os.environ['GO_SOURCE'] and checked['conclusion']=='success'
-          assert signed['head_sha']=='0627adf60c9448d5f5989ec766127faa675b5d6d' and signed['conclusion']=='success'
+          assert signed['head_sha']=='24d3af333748640096a3344d6f6e783f296dc595' and signed['conclusion']=='success'
           PY
       - uses: actions/download-artifact@v4
         with:
@@ -93,6 +93,8 @@ jobs:
           gh run download "$GO_CHECK_RUN" --repo "$GITHUB_REPOSITORY" --name TeleRC-Go-wallpaper-evidence --dir "$RUNNER_TEMP/native"
           mkdir release-dist
           cp -a "$RUNNER_TEMP/signed/release-dist/." release-dist/
+          mkdir -p go/build/test-results
+          cp -a "$RUNNER_TEMP/signed/go/build/test-results/." go/build/test-results/
           (cd release-dist && sha256sum -c SIGNER_SHA256SUMS.txt)
           cp firmware-dist/*.zip release-dist/
           (cd "$RUNNER_TEMP" && zip -qr "$GITHUB_WORKSPACE/release-dist/TeleRC-Go-v1.0.12-test-evidence.zip" checks native)
@@ -110,7 +112,7 @@ jobs:
           source=os.environ['GO_SOURCE']
           provenance=json.loads((out/'SIGNING_PROVENANCE.json').read_text())
           assert provenance['source_commit']==source and provenance['signing_workflow_run']==int(os.environ['SIGN_RUN'])
-          assert provenance['signing_workflow_commit']=='0627adf60c9448d5f5989ec766127faa675b5d6d'
+          assert provenance['signing_workflow_commit']=='24d3af333748640096a3344d6f6e783f296dc595'
           with zipfile.ZipFile(out/'telerc_go-v1.0.12-source.zip') as z:
               assert z.read('SOURCE_COMMIT.txt').decode().strip()==source
           for p in out.glob('*Candidate.zip'): validate_archive(p,source)
