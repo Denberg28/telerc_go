@@ -40,3 +40,18 @@ internal fun stickChannel(
     val shaped = (1f - e) * x + e * x * x * x
     return (1500 + shaped * 400f * sensitivity.coerceIn(.25f, 1f)).toInt().coerceIn(1100, 1900)
 }
+
+/** Go's line scale is proportional to usable receiver demand after sensitivity.
+ * Keep a fixed neutral guard, then compensate the receiver window AFTER gain.
+ * No expo or time filtering: half line requests half of the selected strength.
+ */
+internal fun proportionalStickChannel(
+    position: StickPosition, vertical: Boolean, sensitivity: Float,
+    receiverDeadbandUs: Int
+): Int {
+    val axis = if (vertical) -position.y else position.x
+    if (!axis.isFinite() || !sensitivity.isFinite() || receiverDeadbandUs !in 0..99 || abs(axis) <= .08f) return 1500
+    val demand = abs(axis).coerceAtMost(1f) * sensitivity.coerceIn(.25f, 1f)
+    val delta = receiverDeadbandUs + ((400 - receiverDeadbandUs) * demand).roundToInt().coerceAtLeast(1)
+    return 1500 + sign(axis).toInt() * delta
+}

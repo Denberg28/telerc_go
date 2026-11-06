@@ -1,3 +1,11 @@
+# Go 1.0.12 control verification
+
+64 Go JVM tests and host regressions pass; Android/native verification,
+public-push approval and actual phone/rover HIL remain BLOCKED.
+The position light is touch position, not measured wheel speed or angle.
+Receiver configuration, motor start duty and firmware slew can differ from Test.
+No motor kick is added without measurement. See [acceptance](GO_PROPORTIONAL_112.md).
+
 # SpringCar 0.2.0 bench candidate
 
 Hardware current/temperature, back-drivable spring centering, 2S power conversion,

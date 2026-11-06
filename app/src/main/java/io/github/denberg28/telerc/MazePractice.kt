@@ -120,7 +120,10 @@ internal data class MazeProgress private constructor(val current: Int, val compl
 }
 
 /** Local input and monotonic active time only; deliberately has no transport dependency. */
-internal class MazePractice(val maze: MazeLayout, coinSlots: List<Int> = emptyList(), coinSeed: Int = Random.nextInt(), replayCoin:Boolean = false) {
+internal class MazePractice(val maze: MazeLayout, coinSlots: List<Int> = emptyList(), coinSeed: Int = Random.nextInt(), replayCoin:Boolean = false,
+                            private val inputDeadbandUs: Int = 25,
+                            private val immediateResponse: Boolean = false) {
+    init { require(inputDeadbandUs in 0..99) }
     private val coinRandom=Random(coinSeed)
     private val availableSlots=coinSlots.filter { MazeMarket.key(maze.level,it)!=null }.toMutableSet()
     private var replayEnabled=replayCoin
@@ -147,7 +150,7 @@ internal class MazePractice(val maze: MazeLayout, coinSlots: List<Int> = emptyLi
     fun drive(value: Int) { drive = axis(value) }
     private fun axis(value: Int): Float {
         val delta = value.coerceIn(1100,1900)-1500
-        return if (abs(delta)<=25) 0f else sign(delta.toFloat())*(abs(delta)-25)/375f
+        return if (abs(delta)<=inputDeadbandUs) 0f else sign(delta.toFloat())*(abs(delta)-inputDeadbandUs)/(400-inputDeadbandUs).toFloat()
     }
     fun start() {
         if (state == State.CLEARED || state == State.FAILED) return
@@ -174,7 +177,7 @@ internal class MazePractice(val maze: MazeLayout, coinSlots: List<Int> = emptyLi
         elapsedMillis = (elapsedMillis + milliseconds.coerceAtMost(86_400_000L)).coerceAtMost(86_400_000L)
         val dt = milliseconds.coerceAtMost(50L)/1000f
         // axis() already removes the receiver neutral window.
-        val next = roverStep(pose,steer,drive,dt,inputDeadband=0f)
+        val next = roverStep(pose,steer,drive,dt,inputDeadband=0f,immediateResponse=immediateResponse)
         val x = pose.x + (next.x-pose.x)*4f
         val y = pose.y + (next.y-pose.y)*4f
         // Resolve each axis separately so a glancing wall contact can slide along the passage.

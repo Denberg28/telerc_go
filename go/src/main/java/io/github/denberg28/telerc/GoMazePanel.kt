@@ -22,7 +22,8 @@ internal class GoMazeSession(context:Context) {
         if(level<=progress.completed&&saved==null)prefs.edit().putBoolean(key,offered).apply()
         return offered
     }
-    private fun newPractice(level:Int)=MazePractice(MazeLevels.layout(level),MazeMarket.available(level,wallet),replayCoin=replayOffer(level))
+    private fun newPractice(level:Int)=MazePractice(MazeLevels.layout(level),MazeMarket.available(level,wallet),replayCoin=replayOffer(level),
+        inputDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US,immediateResponse=true)
     private fun saveProgress(){prefs.edit().putInt("level",progress.current).putInt("completed_level",progress.completed).apply()}
     fun saveWallet(value:MazeWallet){wallet=value;prefs.edit().putString("wallet",wallet.encode()).apply()}
     fun claim(slot:Int){wallet.claim(practice.maze.level,slot)?.let(::saveWallet)}
@@ -116,7 +117,7 @@ internal class GoMazePanel(private val activity:GoActivity,private val session:G
                 setPadding(dp(4),dp(4),dp(4),dp(4))
             }
             addView(caption,LayoutParams(-1,-2).apply{leftMargin=dp(4);rightMargin=dp(4)})
-            val joystick=JoystickView(activity,vertical,translucent=true,receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US){value->
+            val joystick=JoystickView(activity,vertical,translucent=true,receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US,proportionalResponse=true){value->
                 if(vertical)practice.drive(value)else practice.steering(value)
             }
             if(vertical)drive=joystick else steering=joystick

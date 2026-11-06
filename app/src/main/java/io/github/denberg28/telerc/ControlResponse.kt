@@ -13,6 +13,11 @@ internal data class ControlResponse(
         receiverDeadbandUs
     )
 
+    fun proportionalChannel(position: StickPosition, vertical: Boolean, receiverDeadbandUs: Int): Int =
+        proportionalStickChannel(position, vertical,
+            (if (vertical) drivePercent else steeringPercent).coerceIn(25, 100) / 100f,
+            receiverDeadbandUs)
+
     companion object {
         // Covers the 25 µs mini-rover and 35 µs hybrid receiver neutral windows.
         const val GO_RECEIVER_DEADBAND_US = 35
