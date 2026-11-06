@@ -1,3 +1,17 @@
+# Go 1.0.12 proportional response
+
+Baseline `889a211`; branch `fix/go-proportional-joystick`.
+See [contract and executable acceptance](GO_PROPORTIONAL_112.md).
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| A build | JVM PASS; Android BLOCKED | 64 Go JVM tests compiled with Kotlin 2.1.20/target 17 and passed. Gradle distribution unavailable; public CI push needs authorization. |
+| B behavior | PASS — host tested | 64 Go JVM tests include first-frame track magnitude within one PWM step, both axes/directions, line fractions and independent gains; release/reversal have no Test lag. |
+| C regression | PASS with sanitizer limitation | 18 release/package checks; shared/motor sync; bridge host/ASan/UBSan PASS with leak detection disabled for sandbox restriction. Full LeakSanitizer and Android app tests BLOCKED. |
+| D integration | Pending emulator | Real MotionEvent input, rendered marker and first-frame Test demand; pointer loss, pause, gallery and saved preferences. |
+| E hardware | BLOCKED | No physical phone/rover; restrained-wheel procedure in linked note. |
+| F delivery | BLOCKED by public-push approval review | Go code 1008/version 1.0.12 prepared locally. No remote branch/PR/APK/release created. Same signer required for production upgrade. |
+
 # Published motor stacks — final software verification
 
 Released source `d5975e17dc1e59c8d4ac13d0fbf92f5b778055af`: gates A/B/C/D/F

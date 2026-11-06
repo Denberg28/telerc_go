@@ -98,7 +98,7 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
      channel.close();if(config.localPort==0)throw e
      channel=DatagramSocket(null);udp=channel;channel.bind(InetSocketAddress(0));fallback=true
     }
-    channel.soTimeout=20;network.bindSocket(channel)
+    channel.soTimeout=5;network.bindSocket(channel)
     if(desired!==config){channel.close();continue}
     synchronized(lock){connected=true;verified=false;fc=false;balancing=false;explicitDisarm=false;gate.disconnect();armRequest.cancel();awaitingArmUntil=0;ownersSeen=false;capable=false;owner=0;ownerAt=0;switchAt=0;radioBlocked=false;receiver=false;stopPending=false;takeRequested=false;message="Waiting for rover"}
     var discover=0L;var sent=0L;var uiAt=0L;var networkAt=0L;var gcsAt=0L;var boot:Long?=null;var kind:Int?=null;var requestedRc=false;var lastFcBoot:Long?=null
@@ -131,7 +131,7 @@ internal class GoLink(context:Context,private val update:()->Unit):AutoCloseable
       if(fc&&peerVerified&&!requestedRc){send(GoProtocol.requestRcChannels(sequence++,config.system));requestedRc=true}
       if(takeRequested&&armRequest.valid(gate.epoch,n)&&!radioBlocked){send(GoElrs.take(sequence++,config.system));takeRequested=false}
       if(fc&&gate.enabled&&gate.fresh(n)&&n-gcsAt>=1000){send(GoProtocol.heartbeat(sequence++));gcsAt=n}
-      if(gate.enabled&&gate.fresh(n)&&mayUsePhone(n)&&n-sent>=50){
+      if(gate.enabled&&gate.fresh(n)&&mayUsePhone(n)&&n-sent>=20){
        val s=if(gate.mayDrive(n))steer else 1500;val d=if(gate.mayDrive(n))drive else 1500
        send(GoProtocol.rc(sequence++,config.system,s,d));gate.sent(s,d,n);sent=n
       }

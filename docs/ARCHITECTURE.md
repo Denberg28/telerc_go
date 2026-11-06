@@ -1,3 +1,11 @@
+# Go proportional input mode
+
+Go explicitly selects proportional receiver-compensated input and a matched
+35 µs/direct Test model. Sensitivity scales usable demand before neutral-window
+compensation; stored expo does not alter the line scale. Live latest-value RC
+sending uses 20 ms cadence and 5 ms receive polling. Full-app defaults retain
+legacy shaping and simulation smoothing. See [contract](GO_PROPORTIONAL_112.md).
+
 # Paired Go motor stacks
 
 The dedicated `TeleRC_Go_4WD` and `TeleRC_Go_SpringCar` sketches preserve the Go

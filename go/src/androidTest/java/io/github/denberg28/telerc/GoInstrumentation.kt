@@ -15,6 +15,7 @@ import java.net.DatagramSocket
 import java.net.DatagramPacket
 import java.net.InetAddress
 import java.io.File
+import kotlin.math.roundToInt
 class GoInstrumentation:Instrumentation(){
  private var testOnly=false
  private var wallpaperOnly=false
@@ -75,8 +76,8 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyUpdater(a:GoActivity){
   val candidate=File(targetContext.filesDir,"update-candidate.apk");check(candidate.isFile)
   val digest=GoApkVerifier.hash(candidate)
-  check(GoApkVerifier.verify(a,candidate,digest,"1.0.12")){"Newer same-package/signer APK rejected"}
-  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.12")){"Wrong hash accepted"}
+  check(GoApkVerifier.verify(a,candidate,digest,"1.0.13")){"Newer same-package/signer APK rejected"}
+  check(!GoApkVerifier.verify(a,candidate,"00".repeat(32),"1.0.13")){"Wrong hash accepted"}
   check(!GoApkVerifier.verify(a,candidate,digest,"9.9.9")){"Wrong version accepted"}
   val current=File(a.applicationInfo.sourceDir);check(!GoApkVerifier.verify(a,current,GoApkVerifier.hash(current))){"Same-code APK accepted"}
   val other=File(targetContext.filesDir,"update-wrong-package.apk");check(!GoApkVerifier.verify(a,other,GoApkVerifier.hash(other))){"Full TeleRC APK accepted"}
@@ -85,15 +86,15 @@ class GoInstrumentation:Instrumentation(){
   val messages=java.util.Collections.synchronizedList(mutableListOf<String>())
   val fake=GoUpdater(a,{messages.add(it)},{value,_->offered.set(value)},{url->
    calls.add(url)
-   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.12"},{"ref":"refs/tags/go-v1.0.13"}]"""
+   if(url.endsWith("matching-refs/tags/go-v"))"""[{"ref":"refs/tags/v9.9.9"},{"ref":"refs/tags/go-v1.0.13"},{"ref":"refs/tags/go-v1.0.14"}]"""
    else {
-    val v=if(url.endsWith("1.0.13"))"1.0.13" else "1.0.12"
-    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.13"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
+    val v=if(url.endsWith("1.0.14"))"1.0.14" else "1.0.13"
+    """{"tag_name":"go-v$v","draft":false,"prerelease":${v=="1.0.14"},"assets":[{"name":"TeleRC-Go-v$v.apk","browser_download_url":"https://github.com/Denberg28/TeleRC/releases/download/go-v$v/TeleRC-Go-v$v.apk","digest":"sha256:$digest","size":${candidate.length()}}]}"""
    }
   })
   main{fake.check()}
   try{waitFor{offered.get()!=null||messages.any{it!="Checking for updates…"}}}catch(t:Throwable){error("Update callback timed out: calls=$calls messages=$messages finishing=${a.isFinishing} destroyed=${a.isDestroyed} fixtureBytes=${candidate.length()}")}
-  check(offered.get()?.version=="1.0.12"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
+  check(offered.get()?.version=="1.0.13"){"Stable Go selection failed: calls=$calls messages=$messages fixtureBytes=${candidate.length()}"}
   check(calls.none{it.endsWith("releases/latest")||it.endsWith("v9.9.9")});main{fake.close()}
  }
  private fun await(a:GoActivity,phase:String,test:()->Boolean){try{waitFor(test)}catch(t:Throwable){error("$phase: ${a.link.snapshot()}")}}
@@ -161,7 +162,7 @@ class GoInstrumentation:Instrumentation(){
  private fun verifyJoystickDisplay()=main{
   for(vertical in listOf(false,true)){
    var output=1500
-   val stick=JoystickView(targetContext,vertical,translucent=true,receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US){output=it}
+   val stick=JoystickView(targetContext,vertical,translucent=true,receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US,proportionalResponse=true){output=it}
    stick.layout(0,0,240,240)
    val bitmap=Bitmap.createBitmap(240,240,Bitmap.Config.ARGB_8888)
    try{
@@ -228,9 +229,9 @@ class GoInstrumentation:Instrumentation(){
     ControlResponseStore.save(targetContext,ControlResponse(gain,gain,expo))
     for(vertical in listOf(false,true)){
      var output=1500
-     var practice=MazePractice(MazeLevels.layout(1)).apply{start()}
+     var practice=MazePractice(MazeLevels.layout(1),inputDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US,immediateResponse=true).apply{start()}
      val stick=JoystickView(targetContext,vertical,translucent=true,
-      receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US){value->
+      receiverDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US,proportionalResponse=true){value->
        output=value
        if(vertical)practice.drive(value)else practice.steering(value)
       }
@@ -247,16 +248,18 @@ class GoInstrumentation:Instrumentation(){
      check(output==1500){"Center drift registered as motion"}
      touch(MotionEvent.ACTION_MOVE,.12f)
      val low=output-1500
-     check(low in 36 until gain*4){"Low-range touch lost at $gain% / expo $expo"}
+     check(low in 36 until (35+365*gain/100)){"Low-range touch lost at $gain% / expo $expo"}
      touch(MotionEvent.ACTION_MOVE,-.12f)
      check(output==1500-low){"Forward/reverse response is unbalanced"}
      for(fraction in listOf(.25f,.5f,.75f,1f))for(direction in listOf(-1f,1f)){
-      practice=MazePractice(MazeLevels.layout(1)).apply{start()}
+      practice=MazePractice(MazeLevels.layout(1),inputDeadbandUs=ControlResponse.GO_RECEIVER_DEADBAND_US,immediateResponse=true).apply{start()}
       val heading=practice.pose.heading
       val point=fraction*direction
       touch(MotionEvent.ACTION_MOVE,point)
       check((output-1500)*direction>35){"Line position $point did not register"}
-      if(fraction==1f)check(output==1500+(direction*gain*4).toInt()){"Line end did not produce full selected range"}
+      // Pixel-to-axis Float rounding can cross a half-microsecond rounding tie.
+      // The response contract allows one PWM quantization step, not lost travel.
+      if(fraction==1f)check(kotlin.math.abs(output-(1500+(direction*(35+(365f*gain/100).roundToInt())).toInt()))<=1){"Line end mismatch: $output at $gain% / $direction"}
       val bitmap=Bitmap.createBitmap(240,240,Bitmap.Config.ARGB_8888)
       try{
        stick.draw(Canvas(bitmap))
@@ -265,12 +268,15 @@ class GoInstrumentation:Instrumentation(){
        val y=if(vertical)(120f-offset).toInt()else 120
        check(bitmap.getPixel(x,y)==0xFF8DEBFF.toInt()){"Marker does not match line position $point at $gain%"}
       }finally{bitmap.recycle()}
-      practice.advance(20)
+      practice.advance(16)
+      val expected=point*gain/100f
+      check(kotlin.math.abs(practice.pose.leftTrack-expected)<=1f/365f){"First-frame response does not match $point at $gain%: ${practice.pose.leftTrack}"}
+      check(kotlin.math.abs(practice.pose.rightTrack-(if(vertical)expected else -expected))<=1f/365f)
       if(vertical)check(practice.pose.speed*direction>0f){"Drive did not move at line position $point"}
       else check((practice.pose.heading-heading)*direction>0f){"Steering did not turn at line position $point"}
      }
      touch(MotionEvent.ACTION_MOVE,1f,5f)
-     check(output==1500+gain*4){"Finger drift reduced the assigned axis range"}
+     check(kotlin.math.abs(output-(1500+35+(365f*gain/100).roundToInt()))<=1){"Finger drift reduced the assigned axis range: $output at $gain%"}
      touch(MotionEvent.ACTION_CANCEL,0f)
      check(output==1500){"Release did not return to neutral"}
     }
